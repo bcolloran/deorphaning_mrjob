@@ -1,0 +1,1 @@
+HADOOP_HOME=/opt/cloudera/parcels/CDH/ python mr_wc.py --verbose -r hadoop --hadoop-arg -libjars --hadoop-arg ./naive.jar  --jobconf mapred.reduce.tasks=1 --output-dir /tmp/testui hdfs://INPUT_PATH
