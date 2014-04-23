@@ -237,12 +237,11 @@ class ScanJob(MRJob):
         elif kvType== 'kDatePrint_vDocId':
             self.increment_counter("REDUCER", "datePrint key into reducer")
             # in this case, we have a datePrint key. this reducer does all the datePrint linkage and initializes the parts; choose the lowest corresponding docId to initialize the part. subsequent steps will link parts through docs, and relabel docs into the lowest connected part
-            fhrVer=keyIn[0]
             linkedDocIds = list(valIter)
             partNum = min(linkedDocIds)
             for docId in linkedDocIds:
-                yield "v"+fhrVer+"/kDoc_vPart_0|"+docId,  "p"+partNum
-                self.increment_counter("REDUCER", "v"+fhrVer+", initial docId/partId out from reducer")
+                yield "v%s/kDoc_vPart_0|%s"%(fhrVer,docId),  "p"+partNum
+                self.increment_counter("REDUCER", "kDoc_vPart_0 v"+fhrVer+", out from reducer")
 
         else:
             self.increment_counter("REDUCER ERROR", "bad key type")
