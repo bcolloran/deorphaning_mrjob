@@ -19,9 +19,9 @@ def dictToSortedTupList(objIn):
 def getDatePrintsAndTieBreakInfo_v2(payload,jobObj):
     #NOTE: we drop any packet without data.days entries. these cannot be fingerprinted/linked.
     try:
-        dataDays = payload["data"]["days"].keys()
+        dataDaysDates = payload["data"]["days"].keys()
     except:
-        jobObj.increment_counter("MAP ERROR", "no dataDays")
+        jobObj.increment_counter("MAP ERROR", "no dataDaysDates")
         jobObj.increment_counter("MAP ERROR", "REJECTED RECORDS")
         return (None,None)
     try:
@@ -32,7 +32,7 @@ def getDatePrintsAndTieBreakInfo_v2(payload,jobObj):
         return (None,None)
 
     try:
-        numAppSessionsPreviousOnThisPingDate = len(dataDays[thisPingDate]['org.mozilla.appSessions.previous']["main"])
+        numAppSessionsPreviousOnThisPingDate = len(payload["data"]["days"][thisPingDate]['org.mozilla.appSessions.previous']["main"])
     except KeyError:
         jobObj.increment_counter("MAP WARNING", "no ['...appSessions.previous']['main'] on thisPingDate")
         numAppSessionsPreviousOnThisPingDate = 0
@@ -56,11 +56,11 @@ def getDatePrintsAndTieBreakInfo_v2(payload,jobObj):
         jobObj.increment_counter("MAP WARNING", "no profileCreation")
 
     datePrints = []
-    for date in dataDays.keys():
+    for date in dataDaysDates:
         try:
             # was getting  "AttributeError: 'float' object has no attribute 'keys'"
-            if 'org.mozilla.appSessions.previous' in dataDays[date].keys():
-                datePrints.append( str(profileCreation)+"_"+date+"_"+str(hash(str(dictToSortedTupList(dataDays[date])))) )
+            if 'org.mozilla.appSessions.previous' in payload["data"]["days"][date].keys():
+                datePrints.append( str(profileCreation)+"_"+date+"_"+str(hash(str(dictToSortedTupList(payload["data"]["days"][date])))) )
         except:
             jobObj.increment_counter("MAP ERROR", "$data$days[date] is a float")
             jobObj.increment_counter("MAP ERROR", "REJECTED RECORDS")
@@ -82,9 +82,9 @@ def getDatePrintsAndTieBreakInfo_v2(payload,jobObj):
 def getDatePrintsAndTieBreakInfo_v3(payload,jobObj):
     #NOTE: we drop any packet without data.days entries. these cannot be fingerprinted/linked.
     try:
-        dataDays = payload["data"]["days"].keys()
+        dataDaysDates = payload["data"]["days"].keys()
     except:
-        jobObj.increment_counter("MAP ERROR", "no dataDays")
+        jobObj.increment_counter("MAP ERROR", "no dataDaysDates")
         jobObj.increment_counter("MAP ERROR", "REJECTED RECORDS")
         return (None,None)
     try:
@@ -120,10 +120,10 @@ def getDatePrintsAndTieBreakInfo_v3(payload,jobObj):
 
 
     datePrints = []
-    for date in dataDays:
+    for date in dataDaysDates:
         try:
             # was getting  "AttributeError: 'float' object has no attribute 'keys'"
-            datePrints.append( str(profileCreation)+"_"+date+"_"+str(hash(str(dictToSortedTupList(dataDays[date])))) )
+            datePrints.append( str(profileCreation)+"_"+date+"_"+str(hash(str(dictToSortedTupList(payload["data"]["days"][date])))) )
         except:
             jobObj.increment_counter("MAP ERROR", "v3: bad datePrints")
             jobObj.increment_counter("MAP ERROR", "REJECTED RECORDS")
@@ -232,6 +232,7 @@ class ScanJob(MRJob):
             self.increment_counter("REDUCER", "tieBreakInfo or unlinkable passed through reducer")
             yield(keyIn[4:], list(valIter)[0])
         else:
+            self.increment_counter("REDUCER", "datePrint key into reducer")
             # in this case, we have a datePrint key. this reducer does all the datePrint linkage and initializes the parts; choose the lowest corresponding docId to initialize the part. subsequent steps will link parts through docs, and relabel docs into the lowest connected part
             fhrVer=keyIn[0]
             linkedDocIds = list(valIter)
