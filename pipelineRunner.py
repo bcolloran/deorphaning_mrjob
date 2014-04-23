@@ -1,4 +1,4 @@
-from v2v3multiOutTest import ScanJob
+from initialScan import ScanJob
 # from datetime import date, datetime, timedelta
 # import os, shutil, csv
 # from mrjob.job import MRJob
@@ -10,7 +10,7 @@ from v2v3multiOutTest import ScanJob
 import yaml
 
 
-argsInline = ["-r","inline", "--jobconf", "mapred.reduce.tasks=1", "--output-dir", "tmp11","fhrFullExtract_2014-04-14_part-m-08207_1k"]
+argsInline = ["-r","inline", "--jobconf", "mapred.reduce.tasks=1", "--output-dir", "testData/initialScanTmp","testData/fhrFullExtract_2014-04-14_part-m-08207_1k"]
 
 argsHadoop = ["-r","hadoop","--hadoop-arg","-libjars","--hadoop-arg","./naive.jar","--jobconf mapred.reduce.tasks=3","--verbose","--output-dir","/user/bcolloran/mrjobTest/tmp9","hdfs:///user/bcolloran/data/fhrFullExtract_2014-04-14/part-m-08207"]
 

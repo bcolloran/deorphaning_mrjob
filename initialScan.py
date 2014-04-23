@@ -120,7 +120,7 @@ def getDatePrintsAndTieBreakInfo_v3(payload,jobObj):
 
 
     datePrints = []
-    for date in dataDays.keys():
+    for date in dataDays:
         try:
             # was getting  "AttributeError: 'float' object has no attribute 'keys'"
             datePrints.append( str(profileCreation)+"_"+date+"_"+str(hash(str(dictToSortedTupList(dataDays[date])))) )
