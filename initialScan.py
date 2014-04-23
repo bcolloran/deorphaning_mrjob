@@ -192,7 +192,6 @@ class ScanJob(MRJob):
             # yield  "v"+fhrVer+"/kDocId_vPartId_init|"+docId, "p"+docId
             self.increment_counter("MAPPER", "fhr v3 records")
             datePrints, tieBreakInfo = getDatePrintsAndTieBreakInfo_v3(payload,self)
-            print datePrints
             # try:
             #     datePrints, tieBreakInfo = getDatePrintsAndTieBreakInfo_v3(payload,self)
             # except:
@@ -211,14 +210,15 @@ class ScanJob(MRJob):
             if datePrints:
                 for dp in datePrints:
                     self.increment_counter("MAPPER", "(datePrint;docId) out")
-                    yield  fhrVer+"_"+dp, docId
+                    yield  "|".join(["kDatePrint_vDocId",fhrVer,dp]), docId
                 #if there ARE datePrints, then the record IS linkable, so we'll need to emit tieBreakInfo
                 self.increment_counter("MAPPER", "(docId;tieBreakInfo) out")
-                yield  "PASSv"+fhrVer+"/kDocId_vTieBreakInfo|"+docId,  tieBreakInfo
+                yield  "|".join(["kDocId_vTieBreakInfo",fhrVer,docId]),tieBreakInfo
+                # "PASSv"+fhrVer+"/kDocId_vTieBreakInfo|"+docId,  tieBreakInfo
             else:
                 # NOTE: if there are NO date prints in a record, the record cannot be linked to any others. pass it through with it's own part already determined. no tieBreakInfo is needed
                 self.increment_counter("MAPPER", "v"+fhrVer+" unlinkable; no datePrints")
-                yield  "PASSv"+fhrVer+"/unlinkable|"+docId,   "p"+docId
+                yield  "|".join(["unlinkable",fhrVer,docId]),   "p"+docId
                 return
         else:
             #if there is no tieBreakInfo, the packet is bad.
@@ -226,12 +226,15 @@ class ScanJob(MRJob):
 
 
     def reducer(self, keyIn, valIter):
-        if keyIn[0:4]=="PASS":
-            #pass tieBreakInfo and unlinkable k/v pairs straight through.
-            #k/v pairs recieved here should be unique EXCEPT in the case of identical docIds and exactly duplicated records. in these cases, it suffices to re-emit the first element of each list
-            self.increment_counter("REDUCER", "tieBreakInfo or unlinkable passed through reducer")
-            yield(keyIn[4:], list(valIter)[0])
-        else:
+        kvType,fhrVer,key = keyIn.split("|")
+
+        #pass tieBreakInfo and unlinkable k/v pairs straight through
+        #k/v pairs recieved for "unlinkable" and "kDocId_vTieBreakInfo" should be unique EXCEPT in the case of identical docIds and exactly duplicated records. in these cases, it suffices to re-emit the first element of each list
+        if kvType=="unlinkable" or kvType=="kDocId_vTieBreakInfo":
+            self.increment_counter("REDUCER", "%s v%s passed through reducer"%(kvType,fhrVer))
+            yield "v%s/%s|%s"%(fhrVer,kvType,key), list(valIter)[0]
+
+        elif kvType== 'kDatePrint_vDocId':
             self.increment_counter("REDUCER", "datePrint key into reducer")
             # in this case, we have a datePrint key. this reducer does all the datePrint linkage and initializes the parts; choose the lowest corresponding docId to initialize the part. subsequent steps will link parts through docs, and relabel docs into the lowest connected part
             fhrVer=keyIn[0]
@@ -239,7 +242,10 @@ class ScanJob(MRJob):
             partNum = min(linkedDocIds)
             for docId in linkedDocIds:
                 yield "v"+fhrVer+"/kDoc_vPart_0|"+docId,  "p"+partNum
-                self.increment_counter("REDUCER", "initial docId/partId out from reducer")
+                self.increment_counter("REDUCER", "v"+fhrVer+", initial docId/partId out from reducer")
+
+        else:
+            self.increment_counter("REDUCER ERROR", "bad key type")
 
 
 
