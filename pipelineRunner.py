@@ -11,8 +11,8 @@ import yaml
 
 
 argsInline = ["-r","inline", "--jobconf", "mapred.reduce.tasks=1", "--output-dir", "tmp11","fhrFullExtract_2014-04-14_part-m-08207_1k"]
-argsHadoop = ["-r","hadoop","--hadoop-arg","-libjars","--hadoop-arg","./naive.jar","--jobconf mapred.reduce.tasks=3","--verbose","--output-dir","/user/bcolloran/mrjobTest/tmp9","hdfs:///user/bcolloran/data/fhrFullExtract_2014-04-14/part-m-08207"]
 
+argsHadoop = ["-r","hadoop","--hadoop-arg","-libjars","--hadoop-arg","./naive.jar","--jobconf mapred.reduce.tasks=3","--verbose","--output-dir","/user/bcolloran/mrjobTest/tmp9","hdfs:///user/bcolloran/data/fhrFullExtract_2014-04-14/part-m-08207"]
 
 print argsInline
 mr_job = ScanJob(args=argsInline)
