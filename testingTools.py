@@ -17,8 +17,8 @@ def multipleOutputSim(path):
                     outFileStrs[path].append( "\n"+key+"\t"+val )
 
     for path in outFileStrs:
-        print os.getcwd()
-        print path
+        # print os.getcwd()
+        # print path
         if not os.path.exists(path):
             os.makedirs(path)
         with open(path+"/part-00000","w") as outFile:

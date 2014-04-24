@@ -45,7 +45,7 @@ class linkDocsAndPartsJob(MRJob):
             self.increment_counter("REDUCER", "docs in only 1 part")
         else:
             #otherwise, return all the overlaps
-            yield(lowPart,"|".join(linkedParts))
+            yield(lowPart,",".join(linkedParts))
             self.increment_counter("REDUCER", "OVERLAPPING_PARTS")
 
 
