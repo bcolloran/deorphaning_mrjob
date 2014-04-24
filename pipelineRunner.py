@@ -2,7 +2,6 @@ from initialScan import ScanJob
 import yaml
 import os
 import datetime
-import rand
 
 extractDate= datetime.datetime.utcnow().isoformat()[0:19].replace(":",".").replace("T","_")
 
