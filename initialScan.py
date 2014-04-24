@@ -110,7 +110,10 @@ def getDatePrintsAndTieBreakInfo_v3(payload,jobObj):
         currentSessionTime=payload['data']['days'][thisPingDate][currentEnvHash]['org.mozilla.appSessions'].get('normal',[0])[-1]["d"]
     except KeyError:
         currentSessionTime = 0
-        jobObj.increment_counter("MAP WARNING", "v3: no currentSessionTime")
+        jobObj.increment_counter("MAP WARNING", "v3: no currentSessionTime, KeyError")
+    except TypeError:
+        currentSessionTime = 0
+        jobObj.increment_counter("MAP WARNING", "v3: no currentSessionTime, TypeError")
     #NOTE: we will use profile creation date to add further refinement to date collisions, but it is not required.
     try:
         profileCreation = payload['environments']['current']['org.mozilla.profile.age']['profileCreation']
