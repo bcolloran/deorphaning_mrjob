@@ -20,4 +20,12 @@ public class NaiveMultiOutputFormatTwo
     String keyStr = key.toString().split("\\|")[1].replace("\"","");
     return new Text( keyStr );
     }
+
+    @Override
+    protected Text generateActualValue(Text key, Text value) {
+    // return value;
+    // key.setValue( key.toString().split("|")[1].replace("\"","") );
+    String valStr = value.toString().replace("\"","");
+    return new Text( valStr );
+    }
 }
