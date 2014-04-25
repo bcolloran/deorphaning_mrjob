@@ -17,15 +17,8 @@ public class NaiveMultiOutputFormatTwo
     protected Text generateActualKey(Text key, Text value) {
     // return value;
     // key.setValue( key.toString().split("|")[1].replace("\"","") );
-    String keyStr = key.toString().split("\\|")[1].replace("\"","");
+    // String keyStr = key.toString().split("\\|")[1].replace("\"","");
+    String keyStr = key.toString().split("\\|")[1];
     return new Text( keyStr );
-    }
-
-    @Override
-    protected Text generateActualValue(Text key, Text value) {
-    // return value;
-    // key.setValue( key.toString().split("|")[1].replace("\"","") );
-    String valStr = value.toString().replace("\"","");
-    return new Text( valStr );
     }
 }
