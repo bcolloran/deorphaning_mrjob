@@ -2,7 +2,7 @@ package test;
 
 import org.apache.hadoop.mapred.lib.MultipleTextOutputFormat;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.typedbytes.TypedBytesWritable;
+// import org.apache.hadoop.typedbytes.TypedBytesWritable;
 
 public class NaiveMultiOutputFormatTwo
     extends MultipleTextOutputFormat<Text, Text> {
