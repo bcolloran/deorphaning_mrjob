@@ -14,7 +14,8 @@ localRun = ".localfile" in os.listdir('.')
 if localRun:
     args = ["-r","inline", "--jobconf", "mapred.reduce.tasks=1", "--output-dir", "testData/initialScanTmp","testData/fhrFullExtract_2014-04-14_part-m-08207_1k"]
 else:
-    args = ["-r","hadoop","--hadoop-arg","-libjars","--hadoop-arg","tinyoutputformat/naive.jar","--jobconf","mapred.reduce.tasks=3","--verbose","--output-dir","/user/bcolloran/mrjobTest/"+extractDate,"hdfs:///user/bcolloran/data/fhrFullExtract_2014-04-14/part-m-08207"]
+    rootPath = "/user/bcolloran/mrjobTest/"
+    args = ["-r","hadoop","--hadoop-arg","-libjars","--hadoop-arg","tinyoutputformat/naive.jar","--jobconf","mapred.reduce.tasks=3","--verbose","--output-dir",rootPath+extractDate,"hdfs:///user/bcolloran/data/fhrFullExtract_2014-04-14/part-m-08207"]
 
 print args
 mr_job = ScanJob(args=args)
@@ -31,7 +32,6 @@ if localRun:
         "--output-dir", "v2/kPart_vObjTouchingPart_1",
         "v2/kDoc_vPart_0"]
 else:
-    rootPath = "/user/bcolloran/data/mrjobTest/"
     args = ["-r","hadoop",
         "--jobconf","mapred.reduce.tasks=3",
         "--verbose",
