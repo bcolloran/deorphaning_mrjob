@@ -7,6 +7,7 @@ import testingTools
 import mrjob.logparsers
 import mrjob.parse
 import subprocess
+import getCounterLogs
 
 extractDate=datetime.datetime.utcnow().isoformat()[0:19].replace(":",".").replace("T","_")
 
@@ -51,33 +52,17 @@ HADOOP_HOME=/opt/cloudera/parcels/CDH/ python linkDocsAndParts.py -r hadoop --jo
 '''
 extractDate="2014-04-28_19.22.25"
 
+hdfsDir = rootPath+extractDate
 print args
 mr_job = linkDocsAndPartsJob(args=args)
 with mr_job.make_runner() as runner:
     # runner.run()
     # print runner.counters()
     # print yaml.dump(runner.counters(),default_flow_style=False)
-    print rootPath+extractDate
-    counters = mrjob.logparsers.scan_for_counters_in_files(rootPath+extractDate, runner, '0.20')
-    runnercat = runner.cat("/user/bcolloran/mrjobTest/2014-04-28_19.22.25/_logs/history/job_201403060050_3193_1398712956710_bcolloran_streamjob4688214214206024345.jar")
-    for cat in runnercat:
-        print "cat:",cat
-    print 'counters:',counters
+    print getCounterLogs.getCountersFromHdfsDir(hdfsDir)
 
-    commandList = ["hdfs", "dfs", "-ls", "/user/bcolloran/mrjobTest/2014-04-28_19.22.25/_logs/history"]
-    command = " ".join(commandList)
-    p = subprocess.Popen(commandList,stdout=subprocess.PIPE)
-    stdout,stderr = p.communicate()
-    print "stdout:",stdout
-    print "stderr:",stderr
 
-    p = subprocess.Popen(["hdfs", "dfs", "-text", "/user/bcolloran/mrjobTest/2014-04-28_19.22.25/_logs/history/job_201403060050_3193_1398712956710_bcolloran_streamjob4688214214206024345.jar"],stdout=subprocess.PIPE)
-    stdout,stderr = p.communicate()
-    # print "stdout:",stdout
-    # print "stderr:",stderr
-    for line in stdout.split("\n"):
-        print line[:200]
-    # print mrjob.parse.parse_hadoop_counters_from_line(stdout, '0.20')
-    print [ctr for ctr in mrjob.parse._parse_counters_0_20(stdout) if ctr[0] not in ["Map-Reduce Framework","File System Counters","Job Counters "]]
-    # print mrjob.parse.parse_hadoop_counters_from_line(stdout, '0.18')
+
+
+
 
