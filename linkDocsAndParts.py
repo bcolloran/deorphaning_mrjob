@@ -1,14 +1,21 @@
 from mrjob.job import MRJob
 import mrjob
+import sys, codecs
+sys.stdout = codecs.getwriter('utf-8')(sys.stdout)
+
 
 
 
 #partSet is conceptually a set, but will be implemented as a "|" separated set of strings for compatibility reasons
 class linkDocsAndPartsJob(MRJob):
-    HADOOP_INPUT_FORMAT="org.apache.hadoop.mapred.SequenceFileAsTextInputFormat"
+    HADOOP_INPUT_FORMAT="org.apache.hadoop.mapred.TextInputFormat"
+    # HADOOP_INPUT_FORMAT="org.apache.hadoop.mapred.SequenceFileAsTextInputFormat"
+    # HADOOP_INPUT_FORMAT="org.apache.hadoop.mapred.KeyValueTextInputFormat"
+
     INPUT_PROTOCOL = mrjob.protocol.RawProtocol
     INTERNAL_PROTOCOL = mrjob.protocol.JSONProtocol
     OUTPUT_PROTOCOL = mrjob.protocol.RawProtocol
+
 
 
     def mapper(self,docId, partId):
@@ -52,4 +59,3 @@ class linkDocsAndPartsJob(MRJob):
 
 if __name__ == '__main__':
     linkDocsAndPartsJob.run()
-
