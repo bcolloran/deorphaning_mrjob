@@ -1,12 +1,12 @@
 from initialScan import ScanJob
 from linkDocsAndParts import linkDocsAndPartsJob
-import yaml
+# import yaml
 import os
 import datetime
 import testingTools
-import mrjob.logparsers
-import mrjob.parse
-import subprocess
+# import mrjob.logparsers
+# import mrjob.parse
+# import subprocess
 import getCounterLogs
 
 extractDate=datetime.datetime.utcnow().isoformat()[0:19].replace(":",".").replace("T","_")
@@ -20,15 +20,12 @@ else:
     rootPath = "/user/bcolloran/mrjobTest/"
     args = ["-r","hadoop","--hadoop-arg","-libjars","--hadoop-arg","tinyoutputformat/naive.jar","--jobconf","mapred.reduce.tasks=3","--verbose","--output-dir",rootPath+extractDate,"hdfs:///user/bcolloran/data/fhrFullExtract_2014-04-14/part-m-08207"]
 
-# print args
-# mr_job = ScanJob(args=args)
-# with mr_job.make_runner() as runner:
-#     runner.run()
-#     print runner.counters()
-#     print yaml.dump(runner.counters(),default_flow_style=False)
+print args
+mr_job = ScanJob(args=args)
+with mr_job.make_runner() as runner:
+    runner.run()
+    print getCounterLogs.getCountersFromHdfsDir(rootPath+extractDate)
 
-
-# extractDate="2014-04-25_18.28.38"
 
 if localRun:
     testingTools.multipleOutputSim("testData/initialScanTmp")
@@ -50,16 +47,12 @@ else:
 HADOOP_HOME=/opt/cloudera/parcels/CDH/ python linkDocsAndParts.py -r hadoop --jobconf mapred.reduce.tasks=3 --verbose --output-dir //user/bcolloran/mrjobTest/2014-04-25_18.28.38/v2/kPart_vObjTouchingPart_1 hdfs:///user/bcolloran/mrjobTest/2014-04-25_18.28.38/v2/kDoc_vPart_0
 
 '''
-extractDate="2014-04-28_19.22.25"
 
-hdfsDir = rootPath+extractDate
 print args
 mr_job = linkDocsAndPartsJob(args=args)
 with mr_job.make_runner() as runner:
-    # runner.run()
-    # print runner.counters()
-    # print yaml.dump(runner.counters(),default_flow_style=False)
-    print getCounterLogs.getCountersFromHdfsDir(hdfsDir)
+    runner.run()
+    print getCounterLogs.getCountersFromHdfsDir(rootPath+extractDate+"/v2/kPart_vObjTouchingPart_1")
 
 
 
