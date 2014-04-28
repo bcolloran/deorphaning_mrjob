@@ -150,6 +150,7 @@ def getDatePrintsAndTieBreakInfo_v3(payload,jobObj):
 class ScanJob(MRJob):
     HADOOP_INPUT_FORMAT="org.apache.hadoop.mapred.SequenceFileAsTextInputFormat"
     INPUT_PROTOCOL = mrjob.protocol.RawProtocol
+    OUTPUT_PROTOCOL = mrjob.protocol.RawProtocol
     HADOOP_OUTPUT_FORMAT='test.NaiveMultiOutputFormatTwo'
 
     def configure_options(self):
