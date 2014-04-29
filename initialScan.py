@@ -222,7 +222,7 @@ class ScanJob(MRJob):
             else:
                 # NOTE: if there are NO date prints in a record, the record cannot be linked to any others. pass it through with it's own part already determined. no tieBreakInfo is needed
                 self.increment_counter("MAPPER", "v"+fhrVer+" unlinkable; no datePrints")
-                yield  "|".join(["unlinkable",fhrVer,docId]),   "p"+docId
+                yield  "|".join(["unlinkable",fhrVer,docId]),   "u"
                 return
         else:
             #if there is no tieBreakInfo, the packet is bad.

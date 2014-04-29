@@ -5,9 +5,6 @@ sys.stdout = codecs.getwriter('utf-8')(sys.stdout)
 
 
 
-#for each part, this job finds all the docs and other parts that touch the first doc. then, out of thatset of
-
-#partSet is conceptually a set, but will be implemented as a "|" separated set of strings for compatibility reasons
 class tieBreakInfoPerPartJob(MRJob):
     HADOOP_INPUT_FORMAT="org.apache.hadoop.mapred.TextInputFormat"
     INPUT_PROTOCOL = mrjob.protocol.RawProtocol
@@ -92,4 +89,4 @@ class tieBreakInfoPerPartJob(MRJob):
 
 
 if __name__ == '__main__':
-    relabelDocsJob.run()
+    tieBreakInfoPerPartJob.run()

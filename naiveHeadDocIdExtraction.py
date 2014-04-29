@@ -7,9 +7,6 @@ import random
 
 
 
-#for each part, this job finds all the docs and other parts that touch the first doc. then, out of thatset of
-
-#partSet is conceptually a set, but will be implemented as a "|" separated set of strings for compatibility reasons
 class headRecordExtractionJob(MRJob):
     HADOOP_INPUT_FORMAT="org.apache.hadoop.mapred.TextInputFormat"
     INPUT_PROTOCOL = mrjob.protocol.RawProtocol
@@ -59,7 +56,7 @@ class headRecordExtractionJob(MRJob):
                 self.increment_counter("REDUCER", "records tied for naive head",len(maxRecordDocIdList))
                 self.increment_counter("REDUCER", "FINAL HEAD RECORD docIds OUT")
 
-            yield(docIdOut, "1")
+            yield(docIdOut, "h")
 
 
 
