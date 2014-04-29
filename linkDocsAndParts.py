@@ -19,6 +19,8 @@ class linkDocsAndPartsJob(MRJob):
 
 
     def mapper(self,docId, partId):
+        if partId[0]!="p":
+            raise
         self.increment_counter("MAPPER", "(docId,partId) in")
         yield docId, [partId]
 
@@ -46,13 +48,14 @@ class linkDocsAndPartsJob(MRJob):
 
         yield(lowPart,docId)
         self.increment_counter("REDUCER", "(lowPart,docId) out")
+        self.increment_counter("REDUCER", "OVERLAPPING_PARTS",0)
 
         if len(linkedParts)==1:
             #if there is only one part linked to this docId, there are no overlaps here, so no part-to-part touches are emitted
             self.increment_counter("REDUCER", "docs in only 1 part")
         else:
             #otherwise, return all the overlaps
-            yield(lowPart,",".join(linkedParts))
+            yield(lowPart,"|".join(linkedParts))
             self.increment_counter("REDUCER", "OVERLAPPING_PARTS")
 
 
