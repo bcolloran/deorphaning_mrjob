@@ -1,6 +1,7 @@
 import os
 
 def multipleOutputSim(path):
+    initialCwd=os.getcwd()
     os.chdir(path)
     files = [f for f in os.listdir('.') if os.path.isfile(f)]
     outFileStrs = dict()
@@ -23,3 +24,4 @@ def multipleOutputSim(path):
             os.makedirs(path)
         with open(path+"/part-00000","w") as outFile:
             outFile.write( "".join(outFileStrs[path]) )
+    os.chdir(initialCwd)

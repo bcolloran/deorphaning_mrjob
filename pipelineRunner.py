@@ -22,6 +22,12 @@ localRun = ".localfile" in os.listdir('.')
 
 
 
+# def jobRunner(job,baseArgs,jobArgs,outputPath,inputPaths):
+#     if type(inputPaths)!=type([]):
+#         inputPaths=[inputPaths]
+#     args=baseArgs+jobArgs+["--output-dir",outputPath]+inputPaths
+#     print " ".join(args)
+
 
 if localRun:
     args = ["-r","inline", "--jobconf", "mapred.reduce.tasks=1", "--output-dir", "testData/initialScanTmp","testData/fhrFullExtract_2014-04-14_part-m-08207_1k"]
@@ -120,7 +126,6 @@ with mr_job.make_runner() as runner:
 
 
 
-extractDate="2014-04-29_06.33.39"
 if localRun:
     args = ["-r","inline",
         "--jobconf", "mapred.reduce.tasks=1",
