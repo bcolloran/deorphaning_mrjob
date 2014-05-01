@@ -22,188 +22,55 @@ localRun = ".localfile" in os.listdir('.')
 
 
 
-# def jobRunner(job,baseArgs,jobArgs,outputPath,inputPaths):
-#     if type(inputPaths)!=type([]):
-#         inputPaths=[inputPaths]
-#     args=baseArgs+jobArgs+["--output-dir",outputPath]+inputPaths
-#     print " ".join(args)
+def jobRunner(job,jobArgs,outputPath,inputPaths,local):
+    if type(inputPaths)!=type([]):
+        inputPaths=[inputPaths]
 
-
-if localRun:
-    args = ["-r","inline", "--jobconf", "mapred.reduce.tasks=1", "--output-dir", "testData/initialScanTmp","testData/fhrFullExtract_2014-04-14_part-m-08207_1k"]
-else:
-    rootPath = "/user/bcolloran/mrjobTest/"
-    args = ["-r","hadoop","--hadoop-arg","-libjars","--hadoop-arg","tinyoutputformat/naive.jar","--jobconf","mapred.reduce.tasks=3","--verbose","--output-dir",rootPath+extractDate,"hdfs:///user/bcolloran/data/fhrFullExtract_2014-04-14/part-m-08207"]
-
-print args
-mr_job = ScanJob(args=args)
-with mr_job.make_runner() as runner:
-    runner.run()
-    if localRun:
-        print runner.counters()
-        print yaml.dump(runner.counters(),default_flow_style=False)
+    if local:
+        args= ["-r","inline", "--jobconf", "mapred.reduce.tasks=2", "--output-dir",outputPath]+inputPaths
     else:
-        print getCounterLogs.getCountersFromHdfsDir(rootPath+extractDate)
+        inputPaths = ["hdfs://"+path for path in inputPaths]
+        args= ["-r","hadoop"]+jobArgs+["--output-dir",outputPath]+inputPaths
+
+    print " ".join(args)
+    mr_job = job(args=args)
+    with mr_job.make_runner() as runner:
+        runner.run()
+        if localRun:
+            print yaml.dump(runner.counters(),default_flow_style=False)
+        else:
+            print getCounterLogs.getCountersFromHdfsDir(rootPath+extractDate)
+
+
+
 
 if localRun:
-    testingTools.multipleOutputSim("testData/initialScanTmp")
-
-
-
-
-if localRun:
-    args = ["-r","inline",
-        "--jobconf", "mapred.reduce.tasks=1",
-        "--output-dir", "v2/kPart_vObjTouchingPart_1",
-        "v2/kDoc_vPart_0"]
+    rootPath = "/data/mozilla/deorphaning_mrjob/testData/"+extractDate
+    initDataPath="/data/mozilla/deorphaning_mrjob/testData/fhrFullExtract_2014-04-14_part-m-08207_1k"
 else:
-    args = ["-r","hadoop",
-        "--jobconf","mapred.reduce.tasks=3",
-        "--verbose",
-        "--strict-protocols",
-        "--output-dir",rootPath+extractDate+"/v2/kPart_vObjTouchingPart_1",
-        "hdfs://"+rootPath+extractDate+"/v2/kDoc_vPart_0"]
-print args
-mr_job = linkDocsAndPartsJob(args=args)
-with mr_job.make_runner() as runner:
-    runner.run()
-    if localRun:
-        # print runner.counters()
-        print yaml.dump(runner.counters(),default_flow_style=False)
-    else:
-        print getCounterLogs.getCountersFromHdfsDir(rootPath+extractDate+"/v2/kPart_vObjTouchingPart_1")
+    rootPath = "/user/bcolloran/data/deorphTest/"+extractDate
+    initDataPath="hdfs:///user/bcolloran/data/fhrFullExtract_2014-04-14/part-m-08207"
 
 
-
+jobRunner(ScanJob,["--hadoop-arg","-libjars","--hadoop-arg","tinyoutputformat/naive.jar","--jobconf","mapred.reduce.tasks=3","--verbose"],outputPath=rootPath,inputPaths=initDataPath,local=localRun)
 if localRun:
-    args = ["-r","inline",
-        "--jobconf", "mapred.reduce.tasks=1",
-        "--output-dir", "v2/kDoc_vPart_2",
-        "v2/kPart_vObjTouchingPart_1"]
-else:
-    args = ["-r","hadoop",
-        "--jobconf","mapred.reduce.tasks=3",
-        "--verbose",
-        "--strict-protocols",
-        "--output-dir",rootPath+extractDate+"/v2/kDoc_vPart_2",
-        "hdfs://"+rootPath+extractDate+"/v2/kPart_vObjTouchingPart_1"]
-print args
-mr_job = relabelDocsJob(args=args)
-with mr_job.make_runner() as runner:
-    runner.run()
-    if localRun:
-        # print runner.counters()
-        print yaml.dump(runner.counters(),default_flow_style=False)
-    else:
-        print getCounterLogs.getCountersFromHdfsDir(rootPath+extractDate+"/v2/kDoc_vPart_2")
+    testingTools.multipleOutputSim(rootPath)
 
+jobRunner(linkDocsAndPartsJob,["--jobconf","mapred.reduce.tasks=3","--verbose","--strict-protocols"],outputPath=rootPath+"/v2/kPart_vObjTouchingPart_1",inputPaths=rootPath+"/v2/kDoc_vPart_0",local=localRun)
 
+jobRunner(relabelDocsJob,["--jobconf","mapred.reduce.tasks=3","--verbose","--strict-protocols"],outputPath=rootPath+"/v2/kDoc_vPart_2",inputPaths=rootPath+"/v2/kPart_vObjTouchingPart_1",local=localRun)
 
+jobRunner(linkDocsAndPartsJob,["--jobconf","mapred.reduce.tasks=3","--verbose","--strict-protocols"],outputPath=rootPath+"/v2/kPart_vObjTouchingPart_3",inputPaths=rootPath+"/v2/kDoc_vPart_2",local=localRun)
 
+jobRunner(tieBreakInfoPerPartJob,["--jobconf","mapred.reduce.tasks=3","--verbose","--strict-protocols"],
+    outputPath=rootPath+"/v2/kPart_vDocId-tieBreakInfo",
+    inputPaths=[rootPath+"/v2/kPart_vObjTouchingPart_3",rootPath+"/v2/kDocId_vTieBreakInfo"],local=localRun)
 
-if localRun:
-    args = ["-r","inline",
-        "--jobconf", "mapred.reduce.tasks=1",
-        "--output-dir", "v2/kPart_vObjTouchingPart_3",
-        "v2/kDoc_vPart_2"]
-else:
-    args = ["-r","hadoop",
-        "--jobconf","mapred.reduce.tasks=3",
-        "--verbose",
-        "--strict-protocols",
-        "--output-dir",rootPath+extractDate+"/v2/kPart_vObjTouchingPart_3",
-        "hdfs://"+rootPath+extractDate+"/v2/kDoc_vPart_2"]
-print args
-mr_job = linkDocsAndPartsJob(args=args)
-with mr_job.make_runner() as runner:
-    runner.run()
-    if localRun:
-        # print runner.counters()
-        print yaml.dump(runner.counters(),default_flow_style=False)
-    else:
-        print getCounterLogs.getCountersFromHdfsDir(rootPath+extractDate+"/v2/kPart_vObjTouchingPart_3")
+jobRunner(headRecordExtractionJob,["--jobconf","mapred.reduce.tasks=3","--verbose","--strict-protocols"],outputPath=rootPath+"/v2/naiveHeadRecordDocIds",inputPaths=rootPath+"/v2/kPart_vDocId-tieBreakInfo",local=localRun)
 
-
-
-
-if localRun:
-    args = ["-r","inline",
-        "--jobconf", "mapred.reduce.tasks=1",
-        "--output-dir", "v2/kPart_vDocId-tieBreakInfo",
-        "v2/kPart_vObjTouchingPart_3",
-        "v2/kDocId_vTieBreakInfo"]
-else:
-    args = ["-r","hadoop",
-        "--jobconf","mapred.reduce.tasks=3",
-        "--verbose",
-        "--strict-protocols",
-        "--output-dir",rootPath+extractDate+"/v2/kPart_vDocId-tieBreakInfo",
-        "hdfs://"+rootPath+extractDate+"/v2/kPart_vObjTouchingPart_3",
-        "hdfs://"+rootPath+extractDate+"/v2/kDocId_vTieBreakInfo"]
-print args
-mr_job = tieBreakInfoPerPartJob(args=args)
-with mr_job.make_runner() as runner:
-    runner.run()
-    if localRun:
-        # print runner.counters()
-        print yaml.dump(runner.counters(),default_flow_style=False)
-    else:
-        print getCounterLogs.getCountersFromHdfsDir(rootPath+extractDate+"/v2/kDoc_vPart_2")
-
-
-
-
-
-if localRun:
-    args = ["-r","inline",
-        "--jobconf", "mapred.reduce.tasks=1",
-        "--output-dir", "v2/naiveHeadRecordDocIds",
-        "v2/kPart_vDocId-tieBreakInfo"]
-else:
-    args = ["-r","hadoop",
-        "--jobconf","mapred.reduce.tasks=3",
-        "--verbose",
-        "--strict-protocols",
-        "--output-dir",rootPath+extractDate+"/v2/naiveHeadRecordDocIds",
-        "hdfs://"+rootPath+extractDate+"/v2/kPart_vDocId-tieBreakInfo"]
-print args
-mr_job = headRecordExtractionJob(args=args)
-with mr_job.make_runner() as runner:
-    runner.run()
-    if localRun:
-        # print runner.counters()
-        print yaml.dump(runner.counters(),default_flow_style=False)
-    else:
-        print getCounterLogs.getCountersFromHdfsDir(rootPath+extractDate+"/v2/naiveHeadRecordDocIds")
-
-
-
-if localRun:
-    args = ["-r","inline",
-        "--jobconf", "mapred.reduce.tasks=1",
-        "--output-dir", "v2/finalHeadDocIds",
-        "v2/naiveHeadRecordDocIds",
-        "v2/unlinkable"]
-else:
-    args = ["-r","hadoop",
-        "--jobconf","mapred.reduce.tasks=3",
-        "--verbose",
-        "--strict-protocols",
-        "--output-dir",rootPath+extractDate+"/v2/finalHeadDocIds",
-        "hdfs://"+rootPath+extractDate+"/v2/naiveHeadRecordDocIds",
-        "hdfs://"+rootPath+extractDate+"/v2/unlinkable"]
-print args
-mr_job = finalHeadDocIdsJob(args=args)
-with mr_job.make_runner() as runner:
-    runner.run()
-    if localRun:
-        # print runner.counters()
-        print yaml.dump(runner.counters(),default_flow_style=False)
-    else:
-        print getCounterLogs.getCountersFromHdfsDir(rootPath+extractDate+"/v2/finalHeadDocIds")
-
-
-
-
+jobRunner(finalHeadDocIdsJob,
+    ["--jobconf","mapred.reduce.tasks=3","--verbose","--strict-protocols"],
+    outputPath=rootPath+"/v2/finalHeadDocIds",
+    inputPaths=[rootPath+"/v2/naiveHeadRecordDocIds",rootPath+"/v2/unlinkable"],local=localRun)
 
 
