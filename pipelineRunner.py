@@ -9,7 +9,7 @@ from linkDocsAndParts import linkDocsAndPartsJob
 from relabelDocsWithLowestPart import relabelDocsJob
 from join_docIdsInParts_to_tieBreakInfo import tieBreakInfoPerPartJob
 from naiveHeadDocIdExtraction import headRecordExtractionJob
-from finalRecordExtraction import finalRecordExtractionJob
+# from finalRecordExtraction import finalRecordExtractionJob
 from finalHeadDocIds import finalHeadDocIdsJob
 
 
@@ -27,6 +27,9 @@ def jobRunner(job,jobArgs,outputPath,inputPaths,local):
         inputPaths=[inputPaths]
 
     if local:
+        print inputPaths
+        inputPaths = [f for f in inputPaths if (os.path.isdir(f) or os.path.isfile(f))]
+        print inputPaths
         args= ["-r","inline", "--jobconf", "mapred.reduce.tasks=2", "--output-dir",outputPath]+inputPaths
     else:
         inputPaths = ["hdfs://"+path for path in inputPaths]
@@ -39,7 +42,7 @@ def jobRunner(job,jobArgs,outputPath,inputPaths,local):
         if localRun:
             print yaml.dump(runner.counters(),default_flow_style=False)
         else:
-            print getCounterLogs.getCountersFromHdfsDir(rootPath+extractDate)
+            print getCounterLogs.getCountersFromHdfsDir(outputPath)
 
 
 
@@ -56,21 +59,23 @@ jobRunner(ScanJob,["--hadoop-arg","-libjars","--hadoop-arg","tinyoutputformat/na
 if localRun:
     testingTools.multipleOutputSim(rootPath)
 
-jobRunner(linkDocsAndPartsJob,["--jobconf","mapred.reduce.tasks=3","--verbose","--strict-protocols"],outputPath=rootPath+"/v2/kPart_vObjTouchingPart_1",inputPaths=rootPath+"/v2/kDoc_vPart_0",local=localRun)
 
-jobRunner(relabelDocsJob,["--jobconf","mapred.reduce.tasks=3","--verbose","--strict-protocols"],outputPath=rootPath+"/v2/kDoc_vPart_2",inputPaths=rootPath+"/v2/kPart_vObjTouchingPart_1",local=localRun)
+for verPath in ["/v2","/v3"]:
+    jobRunner(linkDocsAndPartsJob,["--jobconf","mapred.reduce.tasks=3","--verbose","--strict-protocols"],outputPath=rootPath+verPath+"/kPart_vObjTouchingPart_1",inputPaths=rootPath+verPath+"/kDoc_vPart_0",local=localRun)
 
-jobRunner(linkDocsAndPartsJob,["--jobconf","mapred.reduce.tasks=3","--verbose","--strict-protocols"],outputPath=rootPath+"/v2/kPart_vObjTouchingPart_3",inputPaths=rootPath+"/v2/kDoc_vPart_2",local=localRun)
+    jobRunner(relabelDocsJob,["--jobconf","mapred.reduce.tasks=3","--verbose","--strict-protocols"],outputPath=rootPath+verPath+"/kDoc_vPart_2",inputPaths=rootPath+verPath+"/kPart_vObjTouchingPart_1",local=localRun)
 
-jobRunner(tieBreakInfoPerPartJob,["--jobconf","mapred.reduce.tasks=3","--verbose","--strict-protocols"],
-    outputPath=rootPath+"/v2/kPart_vDocId-tieBreakInfo",
-    inputPaths=[rootPath+"/v2/kPart_vObjTouchingPart_3",rootPath+"/v2/kDocId_vTieBreakInfo"],local=localRun)
+    jobRunner(linkDocsAndPartsJob,["--jobconf","mapred.reduce.tasks=3","--verbose","--strict-protocols"],outputPath=rootPath+verPath+"/kPart_vObjTouchingPart_3",inputPaths=rootPath+verPath+"/kDoc_vPart_2",local=localRun)
 
-jobRunner(headRecordExtractionJob,["--jobconf","mapred.reduce.tasks=3","--verbose","--strict-protocols"],outputPath=rootPath+"/v2/naiveHeadRecordDocIds",inputPaths=rootPath+"/v2/kPart_vDocId-tieBreakInfo",local=localRun)
+    jobRunner(tieBreakInfoPerPartJob,["--jobconf","mapred.reduce.tasks=3","--verbose","--strict-protocols"],
+        outputPath=rootPath+verPath+"/kPart_vDocId-tieBreakInfo",
+        inputPaths=[rootPath+verPath+"/kPart_vObjTouchingPart_3",rootPath+verPath+"/kDocId_vTieBreakInfo"],local=localRun)
 
-jobRunner(finalHeadDocIdsJob,
-    ["--jobconf","mapred.reduce.tasks=3","--verbose","--strict-protocols"],
-    outputPath=rootPath+"/v2/finalHeadDocIds",
-    inputPaths=[rootPath+"/v2/naiveHeadRecordDocIds",rootPath+"/v2/unlinkable"],local=localRun)
+    jobRunner(headRecordExtractionJob,["--jobconf","mapred.reduce.tasks=3","--verbose","--strict-protocols"],outputPath=rootPath+verPath+"/naiveHeadRecordDocIds",inputPaths=rootPath+verPath+"/kPart_vDocId-tieBreakInfo",local=localRun)
+
+    jobRunner(finalHeadDocIdsJob,
+        ["--jobconf","mapred.reduce.tasks=3","--verbose","--strict-protocols"],
+        outputPath=rootPath+verPath+"/finalHeadDocIds",
+        inputPaths=[rootPath+verPath+"/naiveHeadRecordDocIds",rootPath+verPath+"/unlinkable"],local=localRun)
 
 

@@ -1,4 +1,4 @@
-import simplejson as json
+import simplejson
 
 from mrjob.job import MRJob
 # from mrjob.launch import _READ_ARGS_FROM_SYS_ARGV
@@ -60,7 +60,7 @@ def getDatePrintsAndTieBreakInfo_v2(payload,jobObj):
         try:
             # was getting  "AttributeError: 'float' object has no attribute 'keys'"
             if 'org.mozilla.appSessions.previous' in payload["data"]["days"][date].keys():
-                datePrints.append( str(profileCreation)+"_"+date+"_"+str(hash(str(dictToSortedTupList(payload["data"]["days"][date])))) )
+                datePrints.append( str(profileCreation)+"_"+date+"_"+str(hash(simplejson.dumps(payload["data"]["days"][date],sort_keys=True))) )
         except:
             jobObj.increment_counter("MAP ERROR", "$data$days[date] is a float")
             jobObj.increment_counter("MAP ERROR", "REJECTED RECORDS")
@@ -126,7 +126,7 @@ def getDatePrintsAndTieBreakInfo_v3(payload,jobObj):
     for date in dataDaysDates:
         try:
             # was getting  "AttributeError: 'float' object has no attribute 'keys'"
-            datePrints.append( str(profileCreation)+"_"+date+"_"+str(hash(str(dictToSortedTupList(payload["data"]["days"][date])))) )
+            datePrints.append( str(profileCreation)+"_"+date+"_"+str(hash(simplejson.dumps(payload["data"]["days"][date],sort_keys=True))) )
         except:
             jobObj.increment_counter("MAP ERROR", "v3: bad datePrints")
             jobObj.increment_counter("MAP ERROR", "REJECTED RECORDS")
@@ -166,7 +166,7 @@ class ScanJob(MRJob):
         self.increment_counter("MAPPER", "INPUT (docId,payload)")
 
         try:
-            payload = json.loads(rawJsonIn)
+            payload = simplejson.loads(rawJsonIn)
         except:
             # print >> sys.stderr, 'Exception (ignored)', sys.exc_info()[0], sys.exc_info()[1]
             # traceback.print_exc(file = sys.stderr)
@@ -236,7 +236,7 @@ class ScanJob(MRJob):
         #k/v pairs recieved for "unlinkable" and "kDocId_vTieBreakInfo" should be unique EXCEPT in the case of identical docIds and exactly duplicated records. in these cases, it suffices to re-emit the first element of each list
         if kvType=="unlinkable" or kvType=="kDocId_vTieBreakInfo":
             self.increment_counter("REDUCER", "%s v%s passed through reducer"%(kvType,fhrVer))
-            yield "v%s/%s|%s"%(fhrVer,kvType,key), list(valIter)[0]
+            yield "v%s/%s|%s"%(fhrVer,kvType,key), next(valIter)
 
         elif kvType== 'kDatePrint_vDocId':
             self.increment_counter("REDUCER", "datePrint key into reducer")
