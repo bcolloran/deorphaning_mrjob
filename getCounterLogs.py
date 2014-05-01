@@ -13,7 +13,7 @@ def getCountersFromHdfsDir(hdfsDir):
     stdout,stderr = p.communicate()
 
     jobLines = [line for line in stdout.split("\n") if line[:9]=="Job JOBID"]
-    counters = [ctr for ctr in mrjob.parse._parse_counters_0_20(jobLines[-1]) if ctr[0] not in ["Map-Reduce Framework","File System Counters","Job Counters "]]
+    counters = [ctr for ctr in mrjob.parse._parse_counters_0_20(jobLines[-1]) if ctr[0] not in ["Map-Reduce Framework","File System Counters","Job Counters ","org.apache.hadoop.mapreduce.lib.input.FileInputFormatCounter"]]
     counterDict={}
     for ctr in counters:
         counterDict.setdefault(ctr[0],{}).setdefault(ctr[1],ctr[2])

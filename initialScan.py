@@ -14,6 +14,11 @@ def dictToSortedTupList(objIn):
     else:
         return objIn
 
+def dictToSortedStr(objIn):
+    if isinstance(objIn,dict):
+        return [str(key)+dictToSortedStr(val) for key,val in sorted(objIn.items())]
+    else:
+        return str(objIn)
 
 
 def getDatePrintsAndTieBreakInfo_v2(payload,jobObj):
@@ -60,7 +65,7 @@ def getDatePrintsAndTieBreakInfo_v2(payload,jobObj):
         try:
             # was getting  "AttributeError: 'float' object has no attribute 'keys'"
             if 'org.mozilla.appSessions.previous' in payload["data"]["days"][date].keys():
-                datePrints.append( str(profileCreation)+"_"+date+"_"+str(hash(simplejson.dumps(payload["data"]["days"][date],sort_keys=True))) )
+                datePrints.append( str(profileCreation)+"_"+date+"_"+str(hash(str(dictToSortedTupList(payload["data"]["days"][date],sort_keys=True)))) )
         except:
             jobObj.increment_counter("MAP ERROR", "$data$days[date] is a float")
             jobObj.increment_counter("MAP ERROR", "REJECTED RECORDS")

@@ -27,9 +27,9 @@ def jobRunner(job,jobArgs,outputPath,inputPaths,local):
         inputPaths=[inputPaths]
 
     if local:
-        print inputPaths
+        # print inputPaths
         inputPaths = [f for f in inputPaths if (os.path.isdir(f) or os.path.isfile(f))]
-        print inputPaths
+        # print inputPaths
         args= ["-r","inline", "--jobconf", "mapred.reduce.tasks=2", "--output-dir",outputPath]+inputPaths
     else:
         inputPaths = ["hdfs://"+path for path in inputPaths]
