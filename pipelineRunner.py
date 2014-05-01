@@ -52,7 +52,7 @@ if localRun:
     initDataPath="/data/mozilla/deorphaning_mrjob/testData/fhrFullExtract_2014-04-14_part-m-08207_1k"
 else:
     rootPath = "/user/bcolloran/data/deorphTest/"+extractDate
-    initDataPath="/user/bcolloran/data/fhrFullExtract_2014-04-21/part-m-00001"
+    initDataPath="/user/bcolloran/data/fhrFullExtract_2014-04-21/part-m-0000*"
 
 
 jobRunner(ScanJob,["--hadoop-arg","-libjars","--hadoop-arg","tinyoutputformat/naive.jar","--jobconf","mapred.reduce.tasks=3","--verbose"],outputPath=rootPath,inputPaths=initDataPath,local=localRun)
