@@ -21,120 +21,72 @@ def dictToSortedStr(objIn):
         return str(objIn)
 
 
-def getDatePrintsAndTieBreakInfo_v2(payload,jobObj):
+
+
+def getDatePrintsAndTieBreakInfo(payload,jobObj,fhrVer):
     #NOTE: we drop any packet without data.days entries. these cannot be fingerprinted/linked.
     try:
         dataDaysDates = payload["data"]["days"].keys()
     except:
-        jobObj.increment_counter("MAP ERROR", "no dataDaysDates")
-        jobObj.increment_counter("MAP ERROR", "REJECTED RECORDS")
+        jobObj.increment_counter("v%s MAP ERROR"%fhrVer, "no dataDaysDates")
+        jobObj.increment_counter("v%s MAP ERROR"%fhrVer, "REJECTED RECORDS")
         return (None,None)
     try:
         thisPingDate = payload["thisPingDate"]
     except:
-        jobObj.increment_counter("MAP ERROR", "no thisPingDate")
-        jobObj.increment_counter("MAP ERROR", "REJECTED RECORDS")
+        jobObj.increment_counter("v%s MAP ERROR"%fhrVer, "no thisPingDate")
+        jobObj.increment_counter("v%s MAP ERROR"%fhrVer, "REJECTED RECORDS")
         return (None,None)
 
-    try:
-        numAppSessionsPreviousOnThisPingDate = len(payload["data"]["days"][thisPingDate]['org.mozilla.appSessions.previous']["main"])
-    except KeyError:
-        jobObj.increment_counter("MAP WARNING", "no ['...appSessions.previous']['main'] on thisPingDate")
-        numAppSessionsPreviousOnThisPingDate = 0
-    except TypeError:
-        #was getting "TypeError: 'float' object is unsubscriptable" errors in the above. this should not happen, and must indicate a bad packet, which we will discard
-        jobObj.increment_counter("MAP ERROR", "float instead of obj in ['...appSessions.previous']['main'] on thisPingDate  ")
-        jobObj.increment_counter("MAP ERROR", "REJECTED RECORDS")
-        return (None,None)
-
-    try:
-        currentSessionTime=payload["data"]["last"]['org.mozilla.appSessions.current']["totalTime"]
-    except KeyError:
-        currentSessionTime = 0
-        jobObj.increment_counter("MAP WARNING", "no currentSessionTime")
-
-    #NOTE: we will use profile creation date to add further refinement to date collisions, but it is not required.
-    try:
-        profileCreation = payload["data"]["last"]["org.mozilla.profile.age"]["profileCreation"]
-    except:
-        profileCreation = "00000"
-        jobObj.increment_counter("MAP WARNING", "no profileCreation")
-
-    datePrints = []
-    for date in dataDaysDates:
+    if fhrVer=="3":
         try:
-            # was getting  "AttributeError: 'float' object has no attribute 'keys'"
-            if 'org.mozilla.appSessions.previous' in payload["data"]["days"][date].keys():
-                datePrints.append( str(profileCreation)+"_"+date+"_"+str(hash(simplejson.dumps(payload["data"]["days"][date],sort_keys=True))) )
+            currentEnvHash = payload['environments']['current']['hash']
         except:
-            jobObj.increment_counter("MAP ERROR", "$data$days[date] is a float")
-            jobObj.increment_counter("MAP ERROR", "REJECTED RECORDS")
+            jobObj.increment_counter("v%s MAP ERROR"%fhrVer, "without current env hash")
+            jobObj.increment_counter("v%s MAP ERROR"%fhrVer, "REJECTED RECORDS")
             return (None,None)
 
-    ### emit tieBreakInfo
-    # jobObj.increment_counter("MAPPER", "(docId,tieBreakInfo) out")
-    tieBreakInfo = "_".join([thisPingDate,str(numAppSessionsPreviousOnThisPingDate),str(currentSessionTime)])
-
-    return (datePrints,tieBreakInfo)
-
-
-
-
-
-
-
-
-def getDatePrintsAndTieBreakInfo_v3(payload,jobObj):
-    #NOTE: we drop any packet without data.days entries. these cannot be fingerprinted/linked.
-    try:
-        dataDaysDates = payload["data"]["days"].keys()
-    except:
-        jobObj.increment_counter("MAP ERROR", "no dataDaysDates")
-        jobObj.increment_counter("MAP ERROR", "REJECTED RECORDS")
-        return (None,None)
-    try:
-        thisPingDate = payload["thisPingDate"]
-    except:
-        jobObj.increment_counter("MAP ERROR", "no thisPingDate")
-        jobObj.increment_counter("MAP ERROR", "REJECTED RECORDS")
-        return (None,None)
-    try:
-        currentEnvHash = payload['environments']['current']['hash']
-    except:
-        jobObj.increment_counter("MAP ERROR", "v3 without current env hash")
-        jobObj.increment_counter("MAP ERROR", "REJECTED RECORDS")
-        return (None,None)
-
 
     try:
-        numAppSessionsOnThisPingDate = len(payload['data']['days'][thisPingDate][currentEnvHash]['org.mozilla.appSessions'].get('normal',[0])) + len(payload['data']['days'][thisPingDate][currentEnvHash]['org.mozilla.appSessions'].get('abnormal',[]))
+        if fhrVer=="3":
+            numAppSessionsOnThisPingDate = len(payload['data']['days'][thisPingDate][currentEnvHash]['org.mozilla.appSessions'].get('normal',[0])) + len(payload['data']['days'][thisPingDate][currentEnvHash]['org.mozilla.appSessions'].get('abnormal',[]))
+        elif fhrVer=="2":
+            numAppSessionsOnThisPingDate = len(payload["data"]["days"][thisPingDate]['org.mozilla.appSessions.previous']["main"])
     except:
-        jobObj.increment_counter("MAP WARNING", "v3: no numAppSessionsOnThisPingDate")
+        jobObj.increment_counter("v%s MAP WARNING"%fhrVer, "no numAppSessionsOnThisPingDate")
         numAppSessionsOnThisPingDate = 0
+
     try:
-        currentSessionTime=payload['data']['days'][thisPingDate][currentEnvHash]['org.mozilla.appSessions'].get('normal',[0])[-1]["d"]
+        if fhrVer=="3":
+            currentSessionTime=payload['data']['days'][thisPingDate][currentEnvHash]['org.mozilla.appSessions'].get('normal',[0])[-1]["d"]
+        elif fhrVer=="2":
+            currentSessionTime=payload["data"]["last"]['org.mozilla.appSessions.current']["totalTime"]
     except KeyError:
         currentSessionTime = 0
-        jobObj.increment_counter("MAP WARNING", "v3: no currentSessionTime, KeyError")
+        jobObj.increment_counter("v%s MAP WARNING"%fhrVer, "no currentSessionTime, KeyError")
     except TypeError:
         currentSessionTime = 0
-        jobObj.increment_counter("MAP WARNING", "v3: no currentSessionTime, TypeError")
+        jobObj.increment_counter("v%s MAP WARNING"%fhrVer, "no currentSessionTime, TypeError")
     #NOTE: we will use profile creation date to add further refinement to date collisions, but it is not required.
+
     try:
         profileCreation = payload['environments']['current']['org.mozilla.profile.age']['profileCreation']
     except:
         profileCreation = "00000"
-        jobObj.increment_counter("MAP WARNING", "v3: no profileCreation")
+        jobObj.increment_counter("v%s MAP WARNING"%fhrVer, "no profileCreation")
 
 
     datePrints = []
     for date in dataDaysDates:
         try:
-            # was getting  "AttributeError: 'float' object has no attribute 'keys'"
-            datePrints.append( str(profileCreation)+"_"+date+"_"+str(hash(simplejson.dumps(payload["data"]["days"][date],sort_keys=True))) )
+            if fhrVer=="3":# was getting  "AttributeError: 'float' object has no attribute 'keys'"
+                datePrints.append( str(profileCreation)+"_"+date+"_"+str(hash(simplejson.dumps(payload["data"]["days"][date],sort_keys=True))) )
+            elif fhrVer=="2":
+                if 'org.mozilla.appSessions.previous' in payload["data"]["days"][date].keys():
+                    datePrints.append( str(profileCreation)+"_"+date+"_"+str(hash(simplejson.dumps(payload["data"]["days"][date],sort_keys=True))) )
         except:
-            jobObj.increment_counter("MAP ERROR", "v3: bad datePrints")
-            jobObj.increment_counter("MAP ERROR", "REJECTED RECORDS")
+            jobObj.increment_counter("v%s MAP ERROR"%fhrVer, "bad datePrints")
+            jobObj.increment_counter("v%s MAP ERROR"%fhrVer, "REJECTED RECORDS")
             return (None,None)
 
     ### emit tieBreakInfo
@@ -142,9 +94,6 @@ def getDatePrintsAndTieBreakInfo_v3(payload,jobObj):
     tieBreakInfo = "_".join([thisPingDate,str(numAppSessionsOnThisPingDate),str(currentSessionTime)])
 
     return (datePrints,tieBreakInfo)
-
-
-
 
 
 
@@ -189,25 +138,18 @@ class ScanJob(MRJob):
             return
 
         if fhrVer == "2":
-            self.increment_counter("MAPPER", "fhr v2 records")
+            self.increment_counter("v2 MAP INFO", "fhr records")
             try:
-                datePrints, tieBreakInfo = getDatePrintsAndTieBreakInfo_v2(payload,self)
+                datePrints, tieBreakInfo = getDatePrintsAndTieBreakInfo(payload,self,fhrVer)
             except:
                 print >> sys.stderr, 'Exception (ignored)', sys.exc_info()[0], sys.exc_info()[1]
                 traceback.print_exc(file = sys.stderr)
-                self.increment_counter("MAP ERROR", "getDatePrintsAndTieBreakInfo_v2 failed")
+                self.increment_counter("v2 MAP ERROR", "getDatePrintsAndTieBreakInfo_v2 failed")
                 return
         elif fhrVer=="3":
             # yield  "v"+fhrVer+"/kDocId_vPartId_init|"+docId, "p"+docId
-            self.increment_counter("MAPPER", "fhr v3 records")
-            datePrints, tieBreakInfo = getDatePrintsAndTieBreakInfo_v3(payload,self)
-            # try:
-            #     datePrints, tieBreakInfo = getDatePrintsAndTieBreakInfo_v3(payload,self)
-            # except:
-            #     print >> sys.stderr, 'Exception (ignored)', sys.exc_info()[0], sys.exc_info()[1]
-            #     traceback.print_exc(file = sys.stderr)
-            #     self.increment_counter("MAP ERROR", "getDatePrintsAndTieBreakInfo_v3 failed")
-            #     return
+            self.increment_counter("v3 MAP INFO", "fhr v3 records")
+            datePrints, tieBreakInfo = getDatePrintsAndTieBreakInfo(payload, self, fhrVer)
         else:
             self.increment_counter("MAP ERROR", "fhr version not 2 or 3")
             self.increment_counter("MAP ERROR", "REJECTED RECORDS")
@@ -226,12 +168,14 @@ class ScanJob(MRJob):
                 # "PASSv"+fhrVer+"/kDocId_vTieBreakInfo|"+docId,  tieBreakInfo
             else:
                 # NOTE: if there are NO date prints in a record, the record cannot be linked to any others. pass it through with it's own part already determined. no tieBreakInfo is needed
-                self.increment_counter("MAPPER", "v"+fhrVer+" unlinkable; no datePrints")
+                self.increment_counter("v%s MAP INFO"%fhrVer, "unlinkable; no datePrints")
                 yield  "|".join(["unlinkable",fhrVer,docId]),   "u"
                 return
         else:
             #if there is no tieBreakInfo, the packet is bad.
             return
+
+
 
 
     def reducer(self, keyIn, valIter):
@@ -240,17 +184,17 @@ class ScanJob(MRJob):
         #pass tieBreakInfo and unlinkable k/v pairs straight through
         #k/v pairs recieved for "unlinkable" and "kDocId_vTieBreakInfo" should be unique EXCEPT in the case of identical docIds and exactly duplicated records. in these cases, it suffices to re-emit the first element of each list
         if kvType=="unlinkable" or kvType=="kDocId_vTieBreakInfo":
-            self.increment_counter("REDUCER", "%s v%s passed through reducer"%(kvType,fhrVer))
+            self.increment_counter("v%s REDUCER"%fhrVer, "%s passed through reducer"%kvType)
             yield "v%s/%s|%s"%(fhrVer,kvType,key), next(valIter)
 
         elif kvType== 'kDatePrint_vDocId':
-            self.increment_counter("REDUCER", "datePrint key into reducer")
+            self.increment_counter("v%s REDUCER"%fhrVer, "datePrint key into reducer")
             # in this case, we have a datePrint key. this reducer does all the datePrint linkage and initializes the parts; choose the lowest corresponding docId to initialize the part. subsequent steps will link parts through docs, and relabel docs into the lowest connected part
             linkedDocIds = list(valIter)
             partNum = min(linkedDocIds)
             for docId in linkedDocIds:
                 yield "v%s/kDoc_vPart_0|%s"%(fhrVer,docId),  "p"+partNum
-                self.increment_counter("REDUCER", "kDoc_vPart_0 v"+fhrVer+", out from reducer")
+                self.increment_counter("v%s REDUCER"%fhrVer, "kDoc_vPart_0 out from reducer")
 
         else:
             self.increment_counter("REDUCER ERROR", "bad key type")
