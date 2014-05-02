@@ -4,6 +4,7 @@ import testingTools
 import getCounterLogs
 import yaml
 import smtplib
+import datetime
 
 from initialScan import ScanJob
 from linkDocsAndParts import linkDocsAndPartsJob
@@ -24,6 +25,7 @@ localRun = ".localfile" in os.listdir('.')
 
 
 def jobRunner(job,jobArgs,outputPath,inputPaths,local):
+    tic = datetime.datetime.now()
     if type(inputPaths)!=type([]):
         inputPaths=[inputPaths]
 
@@ -38,13 +40,14 @@ def jobRunner(job,jobArgs,outputPath,inputPaths,local):
 
     argString= " ".join(args)+"\n"
     mr_job = job(args=args)
-    outString=mr_job.__class__.__name__ +"\n"+ argString
+    outString = "==="+mr_job.__class__.__name__ +"===\n start time: " +str(tic)+"\n"+ argString 
     with mr_job.make_runner() as runner:
         runner.run()
         if localRun:
-            outString+= yaml.dump(runner.counters(),default_flow_style=False)+"\n"
+            outString+= yaml.dump(runner.counters(),default_flow_style=False)
         else:
-            outString+= getCounterLogs.getCountersFromHdfsDir(outputPath)+"\n"
+            outString+= getCounterLogs.getCountersFromHdfsDir(outputPath)
+    outString+= "job duration: " + str(datetime.datetime.now()-tic)+"\n\n"
     print outString
     return outString
 
@@ -91,7 +94,7 @@ sender = 'bcolloran@mozilla.com'
 receivers = ['bcolloran@mozilla.com']
 message = """From: mrjob batch bot <bcolloran@mozilla.com>
 To: <bcolloran@mozilla.com>
-Subject: mrjob DEORPHANING logs, %s
+Subject: mrjob DEORPHANING logs, %s UTC
 
 """%(extractDate)
 if localRun:
