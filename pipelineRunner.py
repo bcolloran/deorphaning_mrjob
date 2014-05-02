@@ -59,30 +59,32 @@ if localRun:
     initDataPath="/data/mozilla/deorphaning_mrjob/testData/fhrFullExtract_2014-04-14_part-m-08207_1k"
 else:
     rootPath = "/user/bcolloran/data/deorphTest/"+extractDate
-    initDataPath="/user/bcolloran/data/fhrFullExtract_2014-04-21/part-m-000*"
+    initDataPath="/user/bcolloran/data/fhrFullExtract_2014-04-21/part-m-*"
 
 
-logString= jobRunner(ScanJob,["--hadoop-arg","-libjars","--hadoop-arg","tinyoutputformat/naive.jar","--jobconf","mapred.reduce.tasks=30","--verbose"],outputPath=rootPath,inputPaths=initDataPath,local=localRun)
+
+
+logString= jobRunner(ScanJob,["--hadoop-arg","-libjars","--hadoop-arg","tinyoutputformat/naive.jar","--jobconf","mapred.reduce.tasks=2500","--verbose"],outputPath=rootPath,inputPaths=initDataPath,local=localRun)
 if localRun:
     testingTools.multipleOutputSim(rootPath)
 
 
 for verPath in ["/v2","/v3"]:
     logString+="\n============ logs for "+verPath[1:]+" records ============\n"
-    logString+= jobRunner(linkDocsAndPartsJob,["--jobconf","mapred.reduce.tasks=3","--verbose","--strict-protocols"],outputPath=rootPath+verPath+"/kPart_vObjTouchingPart_1",inputPaths=rootPath+verPath+"/kDoc_vPart_0",local=localRun)
+    logString+= jobRunner(linkDocsAndPartsJob,["--jobconf","mapred.reduce.tasks=30","--verbose","--strict-protocols"],outputPath=rootPath+verPath+"/kPart_vObjTouchingPart_1",inputPaths=rootPath+verPath+"/kDoc_vPart_0",local=localRun)
 
-    logString+= jobRunner(relabelDocsJob,["--jobconf","mapred.reduce.tasks=3","--verbose","--strict-protocols"],outputPath=rootPath+verPath+"/kDoc_vPart_2",inputPaths=rootPath+verPath+"/kPart_vObjTouchingPart_1",local=localRun)
+    logString+= jobRunner(relabelDocsJob,["--jobconf","mapred.reduce.tasks=30","--verbose","--strict-protocols"],outputPath=rootPath+verPath+"/kDoc_vPart_2",inputPaths=rootPath+verPath+"/kPart_vObjTouchingPart_1",local=localRun)
 
-    logString+= jobRunner(linkDocsAndPartsJob,["--jobconf","mapred.reduce.tasks=3","--verbose","--strict-protocols"],outputPath=rootPath+verPath+"/kPart_vObjTouchingPart_3",inputPaths=rootPath+verPath+"/kDoc_vPart_2",local=localRun)
+    logString+= jobRunner(linkDocsAndPartsJob,["--jobconf","mapred.reduce.tasks=30","--verbose","--strict-protocols"],outputPath=rootPath+verPath+"/kPart_vObjTouchingPart_3",inputPaths=rootPath+verPath+"/kDoc_vPart_2",local=localRun)
 
-    logString+= jobRunner(tieBreakInfoPerPartJob,["--jobconf","mapred.reduce.tasks=3","--verbose","--strict-protocols"],
+    logString+= jobRunner(tieBreakInfoPerPartJob,["--jobconf","mapred.reduce.tasks=30","--verbose","--strict-protocols"],
         outputPath=rootPath+verPath+"/kPart_vDocId-tieBreakInfo",
         inputPaths=[rootPath+verPath+"/kPart_vObjTouchingPart_3",rootPath+verPath+"/kDocId_vTieBreakInfo"],local=localRun)
 
-    logString+= jobRunner(headRecordExtractionJob,["--jobconf","mapred.reduce.tasks=3","--verbose","--strict-protocols"],outputPath=rootPath+verPath+"/naiveHeadRecordDocIds",inputPaths=rootPath+verPath+"/kPart_vDocId-tieBreakInfo",local=localRun)
+    logString+= jobRunner(headRecordExtractionJob,["--jobconf","mapred.reduce.tasks=30","--verbose","--strict-protocols"],outputPath=rootPath+verPath+"/naiveHeadRecordDocIds",inputPaths=rootPath+verPath+"/kPart_vDocId-tieBreakInfo",local=localRun)
 
     logString+= jobRunner(finalHeadDocIdsJob,
-        ["--jobconf","mapred.reduce.tasks=3","--verbose","--strict-protocols"],
+        ["--jobconf","mapred.reduce.tasks=30","--verbose","--strict-protocols"],
         outputPath=rootPath+verPath+"/finalHeadDocIds",
         inputPaths=[rootPath+verPath+"/naiveHeadRecordDocIds",rootPath+verPath+"/unlinkable"],local=localRun)
 
