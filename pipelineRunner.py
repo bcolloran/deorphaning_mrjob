@@ -56,10 +56,10 @@ if localRun:
     initDataPath="/data/mozilla/deorphaning_mrjob/testData/fhrFullExtract_2014-04-14_part-m-08207_1k"
 else:
     rootPath = "/user/bcolloran/data/deorphTest/"+extractDate
-    initDataPath="/user/bcolloran/data/fhrFullExtract_2014-04-21/part-m-0000*"
+    initDataPath="/user/bcolloran/data/fhrFullExtract_2014-04-21/part-m-000*"
 
 
-logString= jobRunner(ScanJob,["--hadoop-arg","-libjars","--hadoop-arg","tinyoutputformat/naive.jar","--jobconf","mapred.reduce.tasks=3","--verbose"],outputPath=rootPath,inputPaths=initDataPath,local=localRun)
+logString= jobRunner(ScanJob,["--hadoop-arg","-libjars","--hadoop-arg","tinyoutputformat/naive.jar","--jobconf","mapred.reduce.tasks=30","--verbose"],outputPath=rootPath,inputPaths=initDataPath,local=localRun)
 if localRun:
     testingTools.multipleOutputSim(rootPath)
 
@@ -89,7 +89,7 @@ for verPath in ["/v2","/v3"]:
 
 sender = 'bcolloran@mozilla.com'
 receivers = ['bcolloran@mozilla.com']
-message = """From: jydoop batch bot <bcolloran@mozilla.com>
+message = """From: mrjob batch bot <bcolloran@mozilla.com>
 To: <bcolloran@mozilla.com>
 Subject: mrjob DEORPHANING logs, %s
 
