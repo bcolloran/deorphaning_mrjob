@@ -3,6 +3,7 @@ import datetime
 import testingTools
 import getCounterLogs
 import yaml
+import smtplib
 
 from initialScan import ScanJob
 from linkDocsAndParts import linkDocsAndPartsJob
@@ -35,14 +36,17 @@ def jobRunner(job,jobArgs,outputPath,inputPaths,local):
         inputPaths = ["hdfs://"+path for path in inputPaths]
         args= ["-r","hadoop"]+jobArgs+["--output-dir",outputPath]+inputPaths
 
-    print " ".join(args)
+    argString= " ".join(args)+"\n"
     mr_job = job(args=args)
+    outString=mr_job.__class__.__name__ +"\n"+ argString
     with mr_job.make_runner() as runner:
         runner.run()
         if localRun:
-            print yaml.dump(runner.counters(),default_flow_style=False)
+            outString+= yaml.dump(runner.counters(),default_flow_style=False)+"\n"
         else:
-            print getCounterLogs.getCountersFromHdfsDir(outputPath)
+            outString+= getCounterLogs.getCountersFromHdfsDir(outputPath)+"\n"
+    print outString
+    return outString
 
 
 
@@ -55,27 +59,47 @@ else:
     initDataPath="/user/bcolloran/data/fhrFullExtract_2014-04-21/part-m-0000*"
 
 
-jobRunner(ScanJob,["--hadoop-arg","-libjars","--hadoop-arg","tinyoutputformat/naive.jar","--jobconf","mapred.reduce.tasks=3","--verbose"],outputPath=rootPath,inputPaths=initDataPath,local=localRun)
+logString= jobRunner(ScanJob,["--hadoop-arg","-libjars","--hadoop-arg","tinyoutputformat/naive.jar","--jobconf","mapred.reduce.tasks=3","--verbose"],outputPath=rootPath,inputPaths=initDataPath,local=localRun)
 if localRun:
     testingTools.multipleOutputSim(rootPath)
 
 
 for verPath in ["/v2","/v3"]:
-    jobRunner(linkDocsAndPartsJob,["--jobconf","mapred.reduce.tasks=3","--verbose","--strict-protocols"],outputPath=rootPath+verPath+"/kPart_vObjTouchingPart_1",inputPaths=rootPath+verPath+"/kDoc_vPart_0",local=localRun)
+    logString+="\n============ logs for "+verPath[1:]+" records ============\n"
+    logString+= jobRunner(linkDocsAndPartsJob,["--jobconf","mapred.reduce.tasks=3","--verbose","--strict-protocols"],outputPath=rootPath+verPath+"/kPart_vObjTouchingPart_1",inputPaths=rootPath+verPath+"/kDoc_vPart_0",local=localRun)
 
-    jobRunner(relabelDocsJob,["--jobconf","mapred.reduce.tasks=3","--verbose","--strict-protocols"],outputPath=rootPath+verPath+"/kDoc_vPart_2",inputPaths=rootPath+verPath+"/kPart_vObjTouchingPart_1",local=localRun)
+    logString+= jobRunner(relabelDocsJob,["--jobconf","mapred.reduce.tasks=3","--verbose","--strict-protocols"],outputPath=rootPath+verPath+"/kDoc_vPart_2",inputPaths=rootPath+verPath+"/kPart_vObjTouchingPart_1",local=localRun)
 
-    jobRunner(linkDocsAndPartsJob,["--jobconf","mapred.reduce.tasks=3","--verbose","--strict-protocols"],outputPath=rootPath+verPath+"/kPart_vObjTouchingPart_3",inputPaths=rootPath+verPath+"/kDoc_vPart_2",local=localRun)
+    logString+= jobRunner(linkDocsAndPartsJob,["--jobconf","mapred.reduce.tasks=3","--verbose","--strict-protocols"],outputPath=rootPath+verPath+"/kPart_vObjTouchingPart_3",inputPaths=rootPath+verPath+"/kDoc_vPart_2",local=localRun)
 
-    jobRunner(tieBreakInfoPerPartJob,["--jobconf","mapred.reduce.tasks=3","--verbose","--strict-protocols"],
+    logString+= jobRunner(tieBreakInfoPerPartJob,["--jobconf","mapred.reduce.tasks=3","--verbose","--strict-protocols"],
         outputPath=rootPath+verPath+"/kPart_vDocId-tieBreakInfo",
         inputPaths=[rootPath+verPath+"/kPart_vObjTouchingPart_3",rootPath+verPath+"/kDocId_vTieBreakInfo"],local=localRun)
 
-    jobRunner(headRecordExtractionJob,["--jobconf","mapred.reduce.tasks=3","--verbose","--strict-protocols"],outputPath=rootPath+verPath+"/naiveHeadRecordDocIds",inputPaths=rootPath+verPath+"/kPart_vDocId-tieBreakInfo",local=localRun)
+    logString+= jobRunner(headRecordExtractionJob,["--jobconf","mapred.reduce.tasks=3","--verbose","--strict-protocols"],outputPath=rootPath+verPath+"/naiveHeadRecordDocIds",inputPaths=rootPath+verPath+"/kPart_vDocId-tieBreakInfo",local=localRun)
 
-    jobRunner(finalHeadDocIdsJob,
+    logString+= jobRunner(finalHeadDocIdsJob,
         ["--jobconf","mapred.reduce.tasks=3","--verbose","--strict-protocols"],
         outputPath=rootPath+verPath+"/finalHeadDocIds",
         inputPaths=[rootPath+verPath+"/naiveHeadRecordDocIds",rootPath+verPath+"/unlinkable"],local=localRun)
 
 
+
+
+
+sender = 'bcolloran@mozilla.com'
+receivers = ['bcolloran@mozilla.com']
+message = """From: jydoop batch bot <bcolloran@mozilla.com>
+To: <bcolloran@mozilla.com>
+Subject: mrjob DEORPHANING logs, %s
+
+"""%(extractDate)
+if localRun:
+    print message+logString
+else:
+    try:
+        smtpObj = smtplib.SMTP('localhost')
+        smtpObj.sendmail(sender, receivers, message+logString)         
+        print "Successfully sent email"
+    except smtplib.SMTPException:
+        print "Error: unable to send email"
