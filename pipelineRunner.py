@@ -71,8 +71,8 @@ else:
 logString=""
 
 # logString= jobRunner(ScanJob,["--hadoop-arg","-libjars","--hadoop-arg","tinyoutputformat/naive.jar","--jobconf","mapred.reduce.tasks=2500","--verbose"],outputPath=rootPath,inputPaths=initDataPath,local=localRun)
-# if localRun:
-#     testingTools.multipleOutputSim(rootPath)
+if localRun:
+    testingTools.multipleOutputSim(rootPath)
 
 
 for verPath in ["/v2","/v3"]:

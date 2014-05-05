@@ -23,24 +23,24 @@ class linkDocsAndPartsJob(MRJob):
     #     yield docId, partId
 
 
-    def combiner(self,docId, partIdStringsIter):
-        # partIdStringsIter should always reach the combiner as an iter of strings like:
-        #     ["pId1","pId2|pId3|...|pId(N)",...]
-        # need to join these with pipes.
-        # partSetOut = set()
-        # for partIdList in partIdIter:
-        #     partSetOut |= set(partIdList)
-        yield docId, "|".join(partIdStringsIter)
+    # def combiner(self,docId, partIdStringsIter):
+    #     # partIdStringsIter should always reach the combiner as an iter of strings like:
+    #     #     ["pId1","pId2|pId3|...|pId(N)",...]
+    #     # need to join these with pipes.
+    #     # partSetOut = set()
+    #     # for partIdList in partIdIter:
+    #     #     partSetOut |= set(partIdList)
+    #     yield docId, "|".join(partIdStringsIter)
 
 
 
-    def reducer(self,docId, partSetIter):
+    def reducer(self,docId, partIdIter):
         # partIdIter should always reach the reducer as an iter of strings like:
-        #     ["pId|pId|...|pId","pId","pId|pId",...]
+        #     ["pId1","pId2",...]
 
-        linkedParts = set()
-        for partSetStr in partSetIter:
-            linkedParts |= set(partSetStr.split("|"))
+        linkedParts = set(partIdIter)
+        # for partSetStr in partIdIter:
+        #     linkedParts |= set(partSetStr.split("|"))
 
         lowPart = min(linkedParts)
 
