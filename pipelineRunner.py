@@ -75,13 +75,13 @@ if localRun:
     testingTools.multipleOutputSim(rootPath)
 
 
-for verPath in ["/v2","/v3"]:
+for verPath in ["/v2"]: #,"/v3"
     logString+="\n============ logs for "+verPath[1:]+" records ============\n"
-    logString+= jobRunner(linkDocsAndPartsJob,["--jobconf","mapred.reduce.tasks=120","--verbose","--strict-protocols"],outputPath=rootPath+verPath+"/kPart_vObjTouchingPart_1",inputPaths=rootPath+verPath+"/kDoc_vPart_0",local=localRun)
+    # logString+= jobRunner(linkDocsAndPartsJob,["--jobconf","mapred.reduce.tasks=150","--verbose","--strict-protocols"],outputPath=rootPath+verPath+"/kPart_vObjTouchingPart_1",inputPaths=rootPath+verPath+"/kDoc_vPart_0",local=localRun)
 
-    logString+= jobRunner(relabelDocsJob,["--jobconf","mapred.reduce.tasks=60","--verbose","--strict-protocols"],outputPath=rootPath+verPath+"/kDoc_vPart_2",inputPaths=rootPath+verPath+"/kPart_vObjTouchingPart_1",local=localRun)
+    logString+= jobRunner(relabelDocsJob,["--jobconf","mapred.reduce.tasks=100","--verbose","--strict-protocols"],outputPath=rootPath+verPath+"/kDoc_vPart_2",inputPaths=rootPath+verPath+"/kPart_vObjTouchingPart_1",local=localRun)
 
-    logString+= jobRunner(linkDocsAndPartsJob,["--jobconf","mapred.reduce.tasks=60","--verbose","--strict-protocols"],outputPath=rootPath+verPath+"/kPart_vObjTouchingPart_3",inputPaths=rootPath+verPath+"/kDoc_vPart_2",local=localRun)
+    logString+= jobRunner(linkDocsAndPartsJob,["--jobconf","mapred.reduce.tasks=100","--verbose","--strict-protocols"],outputPath=rootPath+verPath+"/kPart_vObjTouchingPart_3",inputPaths=rootPath+verPath+"/kDoc_vPart_2",local=localRun)
 
     logString+= jobRunner(tieBreakInfoPerPartJob,["--jobconf","mapred.reduce.tasks=60","--verbose","--strict-protocols"],
         outputPath=rootPath+verPath+"/kPart_vDocId-tieBreakInfo",

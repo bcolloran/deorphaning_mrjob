@@ -41,7 +41,7 @@ class tieBreakInfoPerPartJob(MRJob):
             self.increment_counter("MAPPER", "(docId,tieBreakInfo) out")
             yield(partId_orDocId,docId_orTieBreakInfo)
         else:
-            print "bad input partId_orDocId:",docId_orPartSet
+            print "bad input partId_orDocId:",partId_orDocId
             raise ValueError()
 
 

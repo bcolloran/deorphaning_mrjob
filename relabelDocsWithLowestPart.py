@@ -71,8 +71,10 @@ class relabelDocsJob(MRJob):
         for docIdSet_orPartSet in iterOfDocIdSet_orPartSet:
             if docIdSet_orPartSet[0]=="p":
                 partSet |= set(docIdSet_orPartSet.split("|"))
+                self.increment_counter("REDUCER", "partSets in")
             elif docIdSet_orPartSet[0].lower() in list("0123456789abcdef"):
                 docSet |= set(docIdSet_orPartSet.split("|"))
+                self.increment_counter("REDUCER", "docSets in")
             else:
                 print "bad docId_orPartSet:",docIdSet_orPartSet
                 raise ValueError()
