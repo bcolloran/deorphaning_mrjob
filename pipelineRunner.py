@@ -10,7 +10,6 @@ from linkDocsAndParts import linkDocsAndPartsJob
 from relabelDocsWithLowestPart import relabelDocsJob
 from join_docIdsInParts_to_tieBreakInfo import tieBreakInfoPerPartJob
 from naiveHeadDocIdExtraction import headRecordExtractionJob
-# from finalRecordExtraction import finalRecordExtractionJob
 from finalHeadDocIds import finalHeadDocIdsJob
 
 
