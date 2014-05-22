@@ -138,7 +138,7 @@ class ScanJob(MRJob):
             return
 
         if fhrVer == "2":
-            self.increment_counter("v2 MAP INFO", "fhr records")
+            self.increment_counter("v2 MAP INFO", "fhr v2 records")
             try:
                 datePrints, tieBreakInfo = getDatePrintsAndTieBreakInfo(payload,self,fhrVer)
             except:
