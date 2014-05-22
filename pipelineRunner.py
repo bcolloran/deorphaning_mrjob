@@ -59,7 +59,7 @@ if localRun:
 else:
     rootPath = "/user/bcolloran/data/deorphTest/"+extractDate
     # initDataPath="/user/bcolloran/data/fhrFullExtract_2014-04-21/part-m-*"
-    initDataPath="/data/fhr/text/20140505"
+    initDataPath="/data/fhr/text/20140519"
     # initDataPath="/data/fhr/text/20140505/part-m-0000*"
 
 
