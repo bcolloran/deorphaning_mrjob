@@ -52,7 +52,6 @@ def jobRunner(job,jobArgs,outputPath,inputPaths,local):
 
 
 
-extractDate = "2014-05-02_16.52.51" ###########FIX ME 
 
 if localRun:
     rootPath = "/data/mozilla/deorphaning_mrjob/testData/"+extractDate
@@ -60,7 +59,8 @@ if localRun:
 else:
     rootPath = "/user/bcolloran/data/deorphTest/"+extractDate
     # initDataPath="/user/bcolloran/data/fhrFullExtract_2014-04-21/part-m-*"
-    initDataPath="/user/bcolloran/data/fhrFullExtract_2014-04-21/part-m-0000*"
+    initDataPath="/data/fhr/text/20140505"
+    # initDataPath="/data/fhr/text/20140505/part-m-0000*"
 
 
 
@@ -68,12 +68,12 @@ else:
 
 logString=""
 
-logString= jobRunner(ScanJob,["--hadoop-arg","-libjars","--hadoop-arg","tinyoutputformat/naive.jar","--jobconf","mapred.reduce.tasks=4000","--verbose"],outputPath=rootPath,inputPaths=initDataPath,local=localRun)
+logString= jobRunner(ScanJob,["--hadoop-arg","-libjars","--hadoop-arg","tinyoutputformat/naive.jar","--jobconf","mapred.reduce.tasks=4000","--jobconf","mapred.job.priority=VERY_LOW","--verbose"],outputPath=rootPath,inputPaths=initDataPath,local=localRun)
 if localRun:
     testingTools.multipleOutputSim(rootPath)
 
 
-for verPath in ["/v2","/v3"]: #
+for verPath in ["/v2","/v3"]:
     logString+="\n============ logs for "+verPath[1:]+" records ============\n"
     logString+= jobRunner(linkDocsAndPartsJob,["--jobconf","mapred.reduce.tasks=1000","--verbose","--strict-protocols"],outputPath=rootPath+verPath+"/kPart_vObjTouchingPart_1",inputPaths=rootPath+verPath+"/kDoc_vPart_0",local=localRun)
 
