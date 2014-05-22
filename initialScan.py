@@ -160,10 +160,10 @@ class ScanJob(MRJob):
         if tieBreakInfo:
             if datePrints:
                 for dp in datePrints:
-                    self.increment_counter("MAPPER", "(datePrint;docId) out")
+                    self.increment_counter("v%s MAP INFO"%fhrVer, "v%s (datePrint;docId) out"%fhrVer)
                     yield  "|".join(["kDatePrint_vDocId",fhrVer,dp]), docId
                 #if there ARE datePrints, then the record IS linkable, so we'll need to emit tieBreakInfo
-                self.increment_counter("MAPPER", "(docId;tieBreakInfo) out")
+                self.increment_counter("v%s MAP INFO"%fhrVer, "v%s (docId;tieBreakInfo) out"%fhrVer)
                 yield  "|".join(["kDocId_vTieBreakInfo",fhrVer,docId]),tieBreakInfo
                 # "PASSv"+fhrVer+"/kDocId_vTieBreakInfo|"+docId,  tieBreakInfo
             else:
