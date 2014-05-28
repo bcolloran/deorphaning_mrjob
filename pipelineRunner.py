@@ -38,13 +38,19 @@ def jobRunner(job,jobArgs,outputPath,inputPaths,local):
 
     argString= " ".join(args)+"\n"
     mr_job = job(args=args)
-    outString = "==="+mr_job.__class__.__name__ +"===\n start time: " +str(tic)+"\n"+ argString 
+    outString = "==="+mr_job.__class__.__name__ +"===\n start time: " +str(tic)+"\n"+ argString
     with mr_job.make_runner() as runner:
-        runner.run()
-        if localRun:
-            outString+= yaml.dump(runner.counters(),default_flow_style=False)
-        else:
-            outString+= getCounterLogs.getCountersFromHdfsDir(outputPath)
+        try:
+            runner.run()
+        except:
+            outString+="\nrunner failed.\ninput paths:%s\nargs:%s\n\n"%(str(inputPaths),str(args))
+        try:
+            if localRun:
+                outString+= yaml.dump(runner.counters(),default_flow_style=False)
+            else:
+                outString+= getCounterLogs.getCountersFromHdfsDir(outputPath)
+        except:
+            outString+="\ncould not retrieve job logs\n"
     outString+= "job duration: " + str(datetime.datetime.now()-tic)+"\n\n"
     print outString
     return outString
