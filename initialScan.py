@@ -1,4 +1,5 @@
 import simplejson
+import json
 
 from mrjob.job import MRJob
 # from mrjob.launch import _READ_ARGS_FROM_SYS_ARGV
@@ -125,11 +126,16 @@ class ScanJob(MRJob):
         try:
             payload = simplejson.loads(rawJsonIn)
         except:
-            # print >> sys.stderr, 'Exception (ignored)', sys.exc_info()[0], sys.exc_info()[1]
-            # traceback.print_exc(file = sys.stderr)
-            self.increment_counter("MAP ERROR", "record failed to parse")
-            self.increment_counter("MAP ERROR", "REJECTED RECORDS")
-            return
+            #added this block because as a fall back:
+            #simplejson was failing to parse ~70k records that jackson parsed ok
+            try:
+                payload = json.loads(rawJsonIn)
+            except:
+                # print >> sys.stderr, 'Exception (ignored)', sys.exc_info()[0], sys.exc_info()[1]
+                # traceback.print_exc(file = sys.stderr)
+                self.increment_counter("MAP ERROR", "record failed to parse")
+                self.increment_counter("MAP ERROR", "REJECTED RECORDS")
+                return
 
         try:
             fhrVer=str(payload["version"])
