@@ -13,7 +13,7 @@ from naiveHeadDocIdExtraction import headRecordExtractionJob
 from finalHeadDocIds import finalHeadDocIdsJob
 
 
-extractDate=datetime.datetime.utcnow().isoformat()[0:19].replace(":",".").replace("T","_")
+startTime=datetime.datetime.utcnow().isoformat()[0:19].replace(":",".").replace("T","_")
 
 #a dummy file called ".localfile" can be added to your local dir to force inline mode
 localRun = ".localfile" in os.listdir('.')
@@ -60,10 +60,10 @@ def jobRunner(job,jobArgs,outputPath,inputPaths,local):
 
 
 if localRun:
-    rootPath = "/data/mozilla/deorphaning_mrjob/testData/"+extractDate
+    rootPath = "/data/mozilla/deorphaning_mrjob/testData/"+startTime
     initDataPath="/data/mozilla/deorphaning_mrjob/testData/fhrFullExtract_2014-04-14_part-m-08207_1k"
 else:
-    rootPath = "/user/bcolloran/data/deorphTest/"+extractDate
+    rootPath = "/user/bcolloran/data/deorphTest/"+startTime
     # initDataPath="/user/bcolloran/data/fhrFullExtract_2014-04-21/part-m-*"
     initDataPath="/data/fhr/text/20140526"
     # initDataPath="/data/fhr/text/20140505/part-m-0000*"
@@ -108,7 +108,7 @@ message = """From: mrjob batch bot <bcolloran@mozilla.com>
 To: <bcolloran@mozilla.com>
 Subject: mrjob DEORPHANING logs, %s UTC
 
-"""%(extractDate)
+"""%(startTime)
 if localRun:
     print message+logString
 else:
