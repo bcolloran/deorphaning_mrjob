@@ -71,9 +71,9 @@ def getDatePrintsAndTieBreakInfo(payload,jobObj,fhrVer):
     #NOTE: we will use profile creation date to add further refinement to date collisions, but it is not required.
 
     try:
-        if fhrVer=="2":
+        if fhrVer=="3":
             profileCreation = payload['environments']['current']['org.mozilla.profile.age']['profileCreation']
-        elif fhrVer=="3":
+        elif fhrVer=="2":
             profileCreation = payload['data']['last']['org.mozilla.profile.age']['profileCreation']
     except KeyError:
         profileCreation = "00000"
