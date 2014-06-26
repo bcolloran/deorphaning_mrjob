@@ -4,6 +4,7 @@ import testingTools
 import getCounterLogs
 import yaml
 import smtplib
+import subprocess
 
 from initialScan import ScanJob
 from linkDocsAndParts import linkDocsAndPartsJob
@@ -63,16 +64,15 @@ if localRun:
     rootPath = "/data/mozilla/deorphaning_mrjob/testData/"+startTime
     initDataPath="/data/mozilla/deorphaning_mrjob/testData/fhrFullExtract_2014-04-14_part-m-08207_1k"
 else:
-    rootPath = "/user/bcolloran/data/deorphTest/"+startTime
+    rootPath = "/user/bcolloran/deorphaningPipeline/"+startTime
     # initDataPath="/user/bcolloran/data/fhrFullExtract_2014-04-21/part-m-*"
-    initDataPath="/data/fhr/text/20140526"
+    #the following gets the date of the most recent Monday
+    nowDate=datetime.datetime.utcnow()
+    extractDate = (nowDate- datetime.timedelta(days=nowDate.weekday())).isoformat()[0:10]
+    initDataPath="/data/fhr/text/"+(extractDate.replace("-",""))
     # initDataPath="/data/fhr/text/20140505/part-m-0000*"
 
 
-
-
-
-logString=""
 
 logString= jobRunner(ScanJob,["--hadoop-arg","-libjars","--hadoop-arg","tinyoutputformat/naive.jar","--jobconf","mapred.reduce.tasks=4000","--jobconf","mapred.job.priority=NORMAL","--verbose"],outputPath=rootPath,inputPaths=initDataPath,local=localRun)
 if localRun:
@@ -98,6 +98,21 @@ for verPath in ["/v2","/v3"]:
         outputPath=rootPath+verPath+"/finalHeadDocIds",
         inputPaths=[rootPath+verPath+"/naiveHeadRecordDocIds",rootPath+verPath+"/unlinkable"],local=localRun)
 
+
+logString+="\n============ record extraction pig script ============\n"
+os.chdir("/home/bcolloran/pig/")
+for verStr in ["v2","v3"]:
+    command = "pig -param orig=%(initDataPath)s -param fetchids=%(rootPath)s/%(verStr)s/finalHeadDocIds/part* -param jointype=merge -param output=deorphaned/%(extractDate)s/%(verStr)s fetch_reports.aphadke.pig" % locals()
+    print command
+    logString+=command+"\n"
+    try:
+        p=subprocess.call(command,shell=True)
+        if p==0:
+            logString+="pig extraction for %s successful\n"%verStr
+        else:
+            logString+="pig extraction for %s FAILED\n"%verStr
+    except:
+        logString+="pig extraction %s CALLER ERROR\n"%verStr
 
 
 
