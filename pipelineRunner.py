@@ -16,6 +16,8 @@ from finalHeadDocIds import finalHeadDocIdsJob
 
 startTime=datetime.datetime.utcnow().isoformat()[0:19].replace(":",".").replace("T","_")
 
+logString="pipeline started at "+startTime+"\n\n"
+
 #a dummy file called ".localfile" can be added to your local dir to force inline mode
 localRun = ".localfile" in os.listdir('.')
 
@@ -73,8 +75,7 @@ else:
     # initDataPath="/data/fhr/text/20140505/part-m-0000*"
 
 
-
-logString= jobRunner(ScanJob,["--hadoop-arg","-libjars","--hadoop-arg","tinyoutputformat/naive.jar","--jobconf","mapred.reduce.tasks=4000","--jobconf","mapred.job.priority=NORMAL","--verbose"],outputPath=rootPath,inputPaths=initDataPath,local=localRun)
+logString+= jobRunner(ScanJob,["--hadoop-arg","-libjars","--hadoop-arg","tinyoutputformat/naive.jar","--jobconf","mapred.reduce.tasks=4000","--jobconf","mapred.job.priority=NORMAL","--verbose"],outputPath=rootPath,inputPaths=initDataPath,local=localRun)
 if localRun:
     testingTools.multipleOutputSim(rootPath)
 
@@ -101,20 +102,34 @@ for verPath in ["/v2","/v3"]:
 
 logString+="\n============ record extraction pig script ============\n"
 os.chdir("/home/bcolloran/pig/")
-for verStr in ["v2","v3"]:
-    command = "pig -param orig=%(initDataPath)s -param fetchids=%(rootPath)s/%(verStr)s/finalHeadDocIds/part* -param jointype=merge -param output=deorphaned/%(extractDate)s/%(verStr)s fetch_reports.aphadke.pig" % locals()
+for verPathStr in ["v2","v3tmp"]:
+    command = "pig -param orig=%(initDataPath)s -param fetchids=%(rootPath)s/%(verPathStr)s/finalHeadDocIds/part* -param jointype=merge -param output=deorphaned/%(extractDate)s/%(verPathStr)s fetch_reports.aphadke.pig" % locals()
     print command
     logString+=command+"\n"
     try:
         p=subprocess.call(command,shell=True)
         if p==0:
-            logString+="pig extraction for %s successful\n"%verStr
+            logString+="pig extraction to path %s successful\n"%verPathStr
         else:
-            logString+="pig extraction for %s FAILED\n"%verStr
+            logString+="pig extraction to path %s FAILED\n"%verPathStr
     except:
-        logString+="pig extraction %s CALLER ERROR\n"%verStr
+        logString+="pig extraction to path %s CALLER ERROR\n"%verPathStr
+
+#consolidate v3 files.
+logString+="\n============ v3 consolidation pig script ============\n"
+try:
+    command = "pig -param orig=/user/bcolloran/deorphaned/%(extractDate)s/v3tmp -param output=/user/bcolloran/deorphaned/%(extractDate)s/v3 fhrV3PartFileCombiner.pig" % locals()
+    p=subprocess.call(command,shell=True)
+    if p==0:
+        logString+="v3 consolidation pig script successful\n"%verPathStr
+    else:
+        logString+="v3 consolidation pig script %s FAILED\n"%verPathStr
+except:
+    logString+="v3 consolidation pig script %s CALLER ERROR\n"%verPathStr
 
 
+
+logString+="\n\n\npipeline finished at "+datetime.datetime.utcnow().isoformat()[0:19].replace(":",".").replace("T","_")
 
 
 sender = 'bcolloran@mozilla.com'
