@@ -128,8 +128,32 @@ except:
     logString+="v3 consolidation pig script %s CALLER ERROR\n"%verPathStr
 
 
+#remove old data
+for path in ["deorphaned","deorphaningPipeline"]:
+    try:
+        oldExtractDate = (nowDate- datetime.timedelta(days=nowDate.weekday()+14)).isoformat()[0:10]
+        command = "hdfs dfs -rmr /user/bcolloran/%(path)s/%(oldExtractDate)s*" % locals()
+        p=subprocess.call(command,shell=True)
+        if p==0:
+            logString+="removed data from /user/bcolloran/%(path)s/%(oldExtractDate)s* \n" % locals()
+        else:
+            logString+="FAILED to remove data from /user/bcolloran/%(path)s/%(oldExtractDate)s* \n" % locals()
+    except:
+        logString+="CALLER ERROR while removing data from /user/bcolloran/%(path)s/%(oldExtractDate)s* \n" % locals()
+
+    
+
 
 logString+="\n\n\npipeline finished at "+datetime.datetime.utcnow().isoformat()[0:19].replace(":",".").replace("T","_")
+
+
+
+
+
+
+
+
+
 
 
 sender = 'bcolloran@mozilla.com'
