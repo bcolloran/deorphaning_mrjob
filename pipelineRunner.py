@@ -15,6 +15,8 @@ from finalHeadDocIds import finalHeadDocIdsJob
 
 
 startTime=datetime.datetime.utcnow().isoformat()[0:19].replace(":",".").replace("T","_")
+tic=datetime.datetime.utcnow()
+
 
 logString="pipeline started at "+startTime+"\n\n"
 
@@ -62,6 +64,10 @@ def jobRunner(job,jobArgs,outputPath,inputPaths,local):
 
 
 
+
+
+
+
 if localRun:
     rootPath = "/data/mozilla/deorphaning_mrjob/testData/"+startTime
     initDataPath="/data/mozilla/deorphaning_mrjob/testData/fhrFullExtract_2014-04-14_part-m-08207_1k"
@@ -71,18 +77,27 @@ else:
     #the following gets the date of the most recent Monday
     nowDate=datetime.datetime.utcnow()
     extractDate = (nowDate- datetime.timedelta(days=nowDate.weekday())).isoformat()[0:10]
+    # extractDate = "2014-07-10"
     initDataPath="/data/fhr/text/"+(extractDate.replace("-",""))
-    # initDataPath="/data/fhr/text/20140505/part-m-0000*"
+    # initDataPath="/data/fhr/text/"+(extractDate.replace("-",""))+"/part-m-0000*"
+    #initDataPath="/data/fhr/text/20140505/part-m-0000*"
+    scanReduceTasks=4000
+    linkReduceTasks=1000
 
 
-logString+= jobRunner(ScanJob,["--hadoop-arg","-libjars","--hadoop-arg","tinyoutputformat/naive.jar","--jobconf","mapred.reduce.tasks=4000","--jobconf","mapred.job.priority=NORMAL","--verbose"],outputPath=rootPath,inputPaths=initDataPath,local=localRun)
+
+
+
+
+
+logString+= jobRunner(ScanJob,["--hadoop-arg","-libjars","--hadoop-arg","tinyoutputformat/naive.jar","--jobconf","mapred.reduce.tasks=%s"%scanReduceTasks,"--jobconf","mapred.job.priority=NORMAL","--verbose"],outputPath=rootPath,inputPaths=initDataPath,local=localRun)
 if localRun:
     testingTools.multipleOutputSim(rootPath)
 
 
 for verPath in ["/v2","/v3"]:
     logString+="\n============ logs for "+verPath[1:]+" records ============\n"
-    logString+= jobRunner(linkDocsAndPartsJob,["--jobconf","mapred.reduce.tasks=1000","--verbose","--strict-protocols"],outputPath=rootPath+verPath+"/kPart_vObjTouchingPart_1",inputPaths=rootPath+verPath+"/kDoc_vPart_0",local=localRun)
+    logString+= jobRunner(linkDocsAndPartsJob,["--jobconf","mapred.reduce.tasks=%s"%linkReduceTasks,"--verbose","--strict-protocols"],outputPath=rootPath+verPath+"/kPart_vObjTouchingPart_1",inputPaths=rootPath+verPath+"/kDoc_vPart_0",local=localRun)
 
     logString+= jobRunner(relabelDocsJob,["--jobconf","mapred.reduce.tasks=200","--verbose","--strict-protocols"],outputPath=rootPath+verPath+"/kDoc_vPart_2",inputPaths=rootPath+verPath+"/kPart_vObjTouchingPart_1",local=localRun)
 
@@ -100,9 +115,17 @@ for verPath in ["/v2","/v3"]:
         inputPaths=[rootPath+verPath+"/naiveHeadRecordDocIds",rootPath+verPath+"/unlinkable"],local=localRun)
 
 
+
+
+
+
+
+
+
+
 logString+="\n============ record extraction pig script ============\n"
 os.chdir("/home/bcolloran/pig/")
-for verPathStr in ["v2","v3tmp"]:
+for verPathStr in ["v2","v3"]:
     command = "pig -param orig=%(initDataPath)s -param fetchids=%(rootPath)s/%(verPathStr)s/finalHeadDocIds/part* -param jointype=merge -param output=deorphaned/%(extractDate)s/%(verPathStr)s fetch_reports.aphadke.pig" % locals()
     print command
     logString+=command+"\n"
@@ -118,17 +141,40 @@ for verPathStr in ["v2","v3tmp"]:
 #consolidate v3 files.
 logString+="\n============ v3 consolidation pig script ============\n"
 try:
+    command = "hdfs dfs -mv /user/bcolloran/deorphaned/%(extractDate)s/v3 /user/bcolloran/deorphaned/%(extractDate)s/v3tmp" % locals()
+    p=subprocess.call(command,shell=True)
+    if p==0:
+        logString+="moved v3 output to v3tmp\n"
+    else:
+        logString+="move v3 output to v3tmp FAILED\n"
+except:
+    logString+="moved v3 output to v3tmp CALLER ERROR\n"
+try:
     command = "pig -param orig=/user/bcolloran/deorphaned/%(extractDate)s/v3tmp -param output=/user/bcolloran/deorphaned/%(extractDate)s/v3 fhrV3PartFileCombiner.pig" % locals()
     p=subprocess.call(command,shell=True)
     if p==0:
-        logString+="v3 consolidation pig script successful\n"%verPathStr
+        logString+="v3 consolidation pig script successful\n"
     else:
-        logString+="v3 consolidation pig script %s FAILED\n"%verPathStr
+        logString+="v3 consolidation pig script FAILED\n"
 except:
-    logString+="v3 consolidation pig script %s CALLER ERROR\n"%verPathStr
+    logString+="v3 consolidation pig script %s CALLER ERROR\n"
+try:
+    command = "hdfs dfs -rm -r /user/bcolloran/deorphaned/%(extractDate)s/v3tmp" % locals()
+    p=subprocess.call(command,shell=True)
+    if p==0:
+        logString+="removed v3tmp\n"
+    else:
+        logString+="removing v3tmp FAILED\n"
+except:
+    logString+="removing v3tmp CALLER ERROR\n"
 
 
-#remove old data
+
+
+
+
+
+logString+="\n============ remove old data ============\n"
 for path in ["deorphaned","deorphaningPipeline"]:
     try:
         oldExtractDate = (nowDate- datetime.timedelta(days=nowDate.weekday()+14)).isoformat()[0:10]
@@ -141,10 +187,12 @@ for path in ["deorphaned","deorphaningPipeline"]:
     except:
         logString+="CALLER ERROR while removing data from /user/bcolloran/%(path)s/%(oldExtractDate)s* \n" % locals()
 
-    
+
 
 
 logString+="\n\n\npipeline finished at "+datetime.datetime.utcnow().isoformat()[0:19].replace(":",".").replace("T","_")
+toc=datetime.datetime.utcnow()
+logString+="\nelapsed time: "+str(toc-tic)
 
 
 
