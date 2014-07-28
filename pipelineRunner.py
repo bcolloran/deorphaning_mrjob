@@ -5,6 +5,7 @@ import getCounterLogs
 import yaml
 import smtplib
 import subprocess
+import time
 
 from initialScan import ScanJob
 from linkDocsAndParts import linkDocsAndPartsJob
@@ -22,6 +23,8 @@ logString="pipeline started at "+startTime+"\n\n"
 
 #a dummy file called ".localfile" can be added to your local dir to force inline mode
 localRun = ".localfile" in os.listdir('.')
+
+
 
 
 
@@ -83,6 +86,50 @@ else:
     #initDataPath="/data/fhr/text/20140505/part-m-0000*"
     scanReduceTasks=4000
     linkReduceTasks=1000
+
+
+
+
+
+
+
+
+if not localRun:
+    for tries in range(100):
+        toc=datetime.datetime.utcnow()
+        if (toc-tic).seconds < 3600*5:
+            try:
+                command = "hdfs dfs -test -e %(initDataPath)s" % locals()
+                p=subprocess.call(command,shell=True)
+                if p==0:
+                    logString+="\n"+initDataPath+" path found at"+str(toc)+"\n"
+                    jobStartMessage = """From: mrjob batch bot<bcolloran@mozilla.com>
+To: <bcolloran@mozilla.com>
+Subject: deorphaning started at %(startTime)s UTC.
+Job started at %(startTime)s UTC.
+Data found at %(initDataPath)s as of %(toc)s UTC.
+"""%locals()
+                    break
+            except:
+                logString+= str(toc)+" path check CALLER ERROR\n"
+            time.sleep(60*5)
+    else:
+        jobStartMessage = """From: mrjob batch bot<bcolloran@mozilla.com>
+To: <bcolloran@mozilla.com>
+Subject: DEORPHANING ABORTED! input data missing! %(startTime)s UTC.
+Job started at %(startTime)s UTC.
+Data missing from %(initDataPath)s as of %(toc)s UTC.
+"""%locals()
+
+    sender = 'bcolloran@mozilla.com'
+    receivers = ['bcolloran@mozilla.com']
+    try:
+        smtpObj = smtplib.SMTP('localhost')
+        smtpObj.sendmail(sender, receivers, jobStartMessage)
+        print "Successfully sent email"
+    except smtplib.SMTPException:
+        print "Error: unable to send email"
+
 
 
 
