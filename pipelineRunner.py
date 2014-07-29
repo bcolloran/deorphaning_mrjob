@@ -252,7 +252,7 @@ logString+="\nelapsed time: "+str(toc-tic)
 
 
 sender = 'bcolloran@mozilla.com'
-receivers = ['bcolloran@mozilla.com']
+receivers = ['bcolloran@mozilla.com','joy@mozilla.com']
 message = """From: mrjob batch bot <bcolloran@mozilla.com>
 To: <bcolloran@mozilla.com>
 Subject: mrjob DEORPHANING logs, %s UTC
