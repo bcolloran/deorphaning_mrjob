@@ -236,6 +236,21 @@ for path in ["deorphaned","deorphaningPipeline"]:
 
 
 
+logString+="\n============ final data summary ============\n"
+try:
+    command="hdfs dfs -du -h /user/bcolloran/deorphaned/%(extractDate)s" % locals()
+    p=subprocess.Popen(command,shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout,stderr=p.communicate()
+
+    if stderr!='':
+        logString+="shell error running 'hdfs dfs -du -h'\n"
+    else:
+        logString+=stdout
+except:
+    logString+="python error running 'hdfs dfs -du -h'\n"
+
+
+
 
 logString+="\n\n\npipeline finished at "+datetime.datetime.utcnow().isoformat()[0:19].replace(":",".").replace("T","_")
 toc=datetime.datetime.utcnow()
