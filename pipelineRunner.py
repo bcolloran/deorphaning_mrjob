@@ -75,8 +75,8 @@ if localRun:
     rootPath = "/data/mozilla/deorphaning_mrjob/testData/"+startTime
     initDataPath="/data/mozilla/deorphaning_mrjob/testData/fhrFullExtract_2014-04-14_part-m-08207_1k"
 
-    scanReduceTasks=4000
-    linkReduceTasks=1000
+    scanReduceTasks=10000
+    linkReduceTasks=2000
 else:
     rootPath = "/user/bcolloran/deorphaningPipeline/"+startTime
     # initDataPath="/user/bcolloran/data/fhrFullExtract_2014-04-21/part-m-*"
@@ -87,8 +87,8 @@ else:
     initDataPath="/data/fhr/text/"+(extractDate.replace("-",""))
     # initDataPath="/data/fhr/text/"+(extractDate.replace("-",""))+"/part-m-0000*"
     #initDataPath="/data/fhr/text/20140505/part-m-0000*"
-    scanReduceTasks=4000
-    linkReduceTasks=1000
+    scanReduceTasks=10000
+    linkReduceTasks=2000
 
 
 
