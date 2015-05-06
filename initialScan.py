@@ -6,6 +6,7 @@ from mrjob.job import MRJob
 import sys, codecs
 import traceback
 import mrjob
+import UUID
 
 sys.stdout = codecs.getwriter('utf-8')(sys.stdout)
 
@@ -120,8 +121,18 @@ class ScanJob(MRJob):
 
 
     def mapper(self, key, rawJsonIn):
-        docId = key
+
         self.increment_counter("MAPPER", "INPUT (docId,payload)")
+        try:
+            docId=str(uuid.UUID(key))
+            if docId!=key:
+                self.increment_counter("MAP ERROR", "non-UUID docId")
+                self.increment_counter("MAP ERROR", "REJECTED RECORDS")
+                return
+        except:
+            self.increment_counter("MAP ERROR", "non-UUID docId")
+            self.increment_counter("MAP ERROR", "REJECTED RECORDS")
+            return
 
         try:
             payload = simplejson.loads(rawJsonIn)
@@ -188,7 +199,11 @@ class ScanJob(MRJob):
 
 
     def reducer(self, keyIn, valIter):
-        kvType,fhrVer,key = keyIn.split("|")
+        try:
+            kvType,fhrVer,key = keyIn.split("|")
+        except:
+            self.increment_counter("REDUCER ERROR", "bad reducer key: "+keyIn)
+            return
 
         #pass tieBreakInfo and unlinkable k/v pairs straight through
         #k/v pairs recieved for "unlinkable" and "kDocId_vTieBreakInfo" should be unique EXCEPT in the case of identical docIds and exactly duplicated records. in these cases, it suffices to re-emit the first element of each list
