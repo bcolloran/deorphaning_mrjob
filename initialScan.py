@@ -6,7 +6,7 @@ from mrjob.job import MRJob
 import sys, codecs
 import traceback
 import mrjob
-import UUID
+import uuid
 
 sys.stdout = codecs.getwriter('utf-8')(sys.stdout)
 
@@ -202,7 +202,12 @@ class ScanJob(MRJob):
         try:
             kvType,fhrVer,key = keyIn.split("|")
         except:
-            self.increment_counter("REDUCER ERROR", "bad reducer key: "+keyIn)
+            try:
+                yield "reducerError|%s"%str(keyIn).replace("|","_").replace("/","_"), str(list(valIter))
+            except:
+                self.increment_counter("REDUCER ERROR", "bad reducer input, could not save to HDFS")
+                return
+            self.increment_counter( "REDUCER ERROR", "bad reducer input, could not even come close to saving to HDFS" )
             return
 
         #pass tieBreakInfo and unlinkable k/v pairs straight through
