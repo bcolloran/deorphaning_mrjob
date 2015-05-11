@@ -6,7 +6,6 @@ from mrjob.job import MRJob
 import sys, codecs
 import traceback
 import mrjob
-import uuid
 
 sys.stdout = codecs.getwriter('utf-8')(sys.stdout)
 
@@ -124,13 +123,14 @@ class ScanJob(MRJob):
 
         self.increment_counter("MAPPER", "INPUT (docId,payload)")
         try:
-            docId=str(uuid.UUID(key))
-            if docId!=key:
-                self.increment_counter("MAP ERROR", "non-UUID docId")
+            if any(char not in "abcdef0123456789-" for char in str(key).lower()):
+                self.increment_counter("MAP ERROR", "docId contains invalid character")
                 self.increment_counter("MAP ERROR", "REJECTED RECORDS")
                 return
+            else:
+                docId = str(key).lower()
         except:
-            self.increment_counter("MAP ERROR", "non-UUID docId")
+            self.increment_counter("MAP ERROR", "error checking docId for invalid characters")
             self.increment_counter("MAP ERROR", "REJECTED RECORDS")
             return
 
