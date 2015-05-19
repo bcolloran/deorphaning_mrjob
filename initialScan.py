@@ -202,13 +202,35 @@ class ScanJob(MRJob):
         try:
             kvType,fhrVer,key = keyIn.split("|")
         except:
+            # try:
+            #     yield "errors/reducerError|%s"%str(keyIn).replace("|","_").replace("/","_"), str(list(valIter))
+            # except:
+            #     self.increment_counter("REDUCER ERROR", "bad reducer input, could not save to HDFS")
+            #     return
+            # self.increment_counter( "REDUCER ERROR", "bad reducer input, could not even come close to saving to HDFS" )
             try:
-                yield "reducerError|%s"%str(keyIn).replace("|","_").replace("/","_"), str(list(valIter))
-            except:
-                self.increment_counter("REDUCER ERROR", "bad reducer input, could not save to HDFS")
+                self.increment_counter( "REDUCER ERROR", "bad reducer input: "+str(keyIn) )
                 return
-            self.increment_counter( "REDUCER ERROR", "bad reducer input, could not even come close to saving to HDFS" )
-            return
+            except:
+                self.increment_counter( "REDUCER ERROR", "bad reducer input" )
+                return
+
+        if fhrVer not in ["2","3"]:
+            try:
+                self.increment_counter( "REDUCER ERROR", "bad reducer version: "+str(keyIn) )
+                return
+            except:
+                self.increment_counter( "REDUCER ERROR", "bad reducer version" )
+                return
+
+        if ("/" in key) or ("|" in key):
+            try:
+                self.increment_counter( "REDUCER ERROR", "bad reducer key: "+str(keyIn) )
+                return
+            except:
+                self.increment_counter( "REDUCER ERROR", "bad reducer key" )
+                return
+
 
         #pass tieBreakInfo and unlinkable k/v pairs straight through
         #k/v pairs recieved for "unlinkable" and "kDocId_vTieBreakInfo" should be unique EXCEPT in the case of identical docIds and exactly duplicated records. in these cases, it suffices to re-emit the first element of each list
